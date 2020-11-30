@@ -1,0 +1,54 @@
+version: '3'
+services:
+  flask_1:
+    build:
+      context: .
+    volumes:
+      - ./config.docker-compose.yaml:/usr/src/trypperdb_web/config.development.yaml:ro
+      - ./config.local.yaml:/usr/src/trypperdb_web/config.local.yaml:ro
+    #user: "${UID}:${GID}"
+    environment:
+      # Sets the environment for alembic, because it does not know the CLI of the HQ
+      TRYPPERDB_ENV: development
+      # This tells this container to run the database migrations. Make sure only one container runs the migration and that TRYPPERDB_ENV is set for alembic
+      RUN_MIGRATIONS: "true"
+    command: ["--environment", "development"]
+    depends_on:
+      - psql
+      - rabbitmq
+  flask_2:
+    build:
+      context: .
+    volumes:
+      - ./config.docker-compose.yaml:/usr/src/trypperdb_web/config.development.yaml:ro
+      - ./config.local.yaml:/usr/src/trypperdb_web/config.local.yaml:ro
+    #user: "${UID}:${GID}"
+    command: ["--environment", "development"]
+    depends_on:
+      - psql
+      - rabbitmq
+  flask_3:
+    build:
+      context: .
+    volumes:
+      - ./config.docker-compose.yaml:/usr/src/trypperdb_web/config.development.yaml:ro
+      - ./config.local.yaml:/usr/src/trypperdb_web/config.local.yaml:ro
+    #user: "${UID}:${GID}"
+    command: ["--environment", "development"]
+    depends_on:
+      - psql
+      - rabbitmq
+  nginx:
+    image: nginx:1.19.2-alpine
+    ports:
+      - 3000:3000
+    volumes:
+      - ./nginx-high-available.conf:/etc/nginx/conf.d/mdc-hq.conf:ro
+    depends_on:
+      - flask_1
+      - flask_2
+      - flask_3
+    links:
+      - flask_1
+      - flask_2
+      - flask_3

@@ -1,0 +1,60 @@
+{% extends "layouts/public.j2" %}
+{% block body %}
+    <div class="dashboard">
+        <h1>Dashboard</h1>
+        <div class="row mb-3">
+            <div class="col col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        Peptides
+                    </div>
+                    <div class="card-body">
+                        <p><b>Total:</b> {{peptide_count}}</p>
+                        <p><b>Peptides per partition</b></p>
+                        <figure class="matplotlib bar-chart">{{ peptide_partitions_svg }}</figure>
+
+                        <button class="btn btn-outline-link btn-sm pl-0" type="button" data-toggle="collapse" data-target="#peptide-estimation-description" aria-expanded="false" aria-controls="peptide-estimation-description">
+                            These are only estimatesions an can change slightly from time to time. Read why ....
+                            <i class="fas"></i>
+                        </button>
+
+                        <div class="collapse" id="peptide-estimation-description">
+                            <p>
+                                Counting the peptides with <code>SELECT count(*) ...</code> needs serveral minutes for each partition and locks the table for other operations.
+                                With PostgreSQLs <code>pg_class</code>-view it is possible to create a good estimation, based on the actual diskspace.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        Partition information (Peptides/Decoys)
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Partition</th>
+                                    <th>Lower boundary (Dalton)</th>
+                                    <th>Upper boundary (Dalton)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for partition in partition_boundaries %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ mass_to_float(partition[1]) }}</td>
+                                        <td>{{ mass_to_float(partition[2]) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+

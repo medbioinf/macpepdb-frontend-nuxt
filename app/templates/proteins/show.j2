@@ -1,0 +1,125 @@
+{% extends "layouts/public.j2" %}
+
+{% block body %}
+    <div id="protein-view">
+        <h1>Protein: {{ protein.accession }}</h1>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                        Attribute
+                    </th>
+                    <th>
+                        Value
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>
+                        Accession
+                    </th>
+                    <td>
+                        {{ protein.accession }}
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        Name
+                    </th>
+                    <td>
+                        {{ protein.name }}
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        Taxonomy
+                    </th>
+                    <td>
+                        <a href="https://www.uniprot.org/taxonomy/{{ protein.taxonomy_id }}" target="_blank">{{ taxonomy.name }} ({{ taxonomy.id }})</a>
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        Proteome ID
+                    </th>
+                    <td>
+                        {% if protein.proteome_id %}
+                            <a href="https://www.uniprot.org/proteomes/{{ protein.proteome_id }}" target="_blank">{{ protein.proteome_id }}</a>
+                        {% else %}
+                            not available
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        Review status
+                    </th>
+                    <td>
+                        {% if protein.is_reviewed %}
+                            is reviewed
+                        {% else %}
+                            not reviewed
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        Sequence
+                    </th>
+                    <td class="text-break">
+                        <CodeBlock :code="'{{ protein.sequence }}'" :identifier="'protein-sequence'" :line_length="60"></CodeBlock>
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        Uniprot
+                    </th>
+                    <td>
+                        <a class="text-wrap-anywhere" href="https://www.uniprot.org/uniprot/{{protein.accession}}" target="_blank">https://www.uniprot.org/uniprot/{{protein.accession}}</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Peptides</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                        Sequence
+                    </th>
+                    <th>
+                        Theoretical mass
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for peptide in peptides %}
+                    <tr>
+                        <th class="text-break">
+                            <a href="{{ url_for("peptide_path", sequence = peptide.sequence) }}">{{ peptide.sequence }}</a>
+                        </th>
+                        <td>
+                            {{ mass_to_float(peptide.weight) }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if page_count > 1 %}
+            <nav class="d-flex w-100 justify-content-center mt-3">
+                <ul class="pagination flex-wrap">
+                    {% for page_idx in range(page_count) %}
+                        <li class="{{"page-item" if not page_idx == current_page else "page-item active" }}">
+                            <a class="page-link" href="{{url_for("protein_page_path", accession = protein.accession, page = page_idx + 1 )}}">
+                                {{ page_idx + 1 }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+{% endblock %}

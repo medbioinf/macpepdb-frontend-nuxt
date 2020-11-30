@@ -1,0 +1,88 @@
+{% extends "layouts/public.j2" %}
+
+{% block body %}
+    <div id="peptide-view">
+        <h1>Peptide: {{ peptide.sequence }}</h1>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                        Attribute
+                    </th>
+                    <th>
+                        Value
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>
+                        Sequence
+                    </th>
+                    <td class="text-break">
+                        <CodeBlock :code="'{{ peptide.sequence }}'" :identifier="'protein-sequence'" :line_length="60"></CodeBlock>
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        Theoretical mass
+                    </th>
+                    <td>
+                        {{ mass_to_float(peptide.weight) }}
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        Length
+                    </th>
+                    <td>
+                        {{ peptide.length }}
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        Missed cleavages
+                    </th>
+                    <td>
+                        {{ peptide.number_of_missed_cleavages }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Proteins</h2>
+        <div class="table-responsive-sm">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>
+                            Accession
+                        </th>
+                        <th>
+                            Proteinname
+                        </th>
+                        <th>
+                            Taxonomy
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for protein in proteins %}
+                        <tr>
+                            <th>
+                                <a href="{{ url_for("protein_path", accession = protein.accession) }}" target="_blank">{{ protein.accession }}</a>
+                            </th>
+                            <td>
+                                {{ protein.name }}
+                            </td>
+                            {% set taxonomy = taxonomies[protein.taxonomy_id] %}
+                            <td>
+                                <a href="https://www.uniprot.org/taxonomy/{{ taxonomy.id }}" target="_blank">{{ taxonomy.name }} ({{ taxonomy.id }})</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

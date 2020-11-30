@@ -1,0 +1,21 @@
+# Repo files
+Readme.md
+
+# Development files
+.git/
+.python-version
+.db/
+.vscode/
+/app/static/bundle/*
+!/app/static/bundle/.keep
+Procfile
+yarn-error.log
+
+# node modules
+node_modules/
+
+# python caches
+__pycache__/
+*.py[cod]
+*$py.class
+

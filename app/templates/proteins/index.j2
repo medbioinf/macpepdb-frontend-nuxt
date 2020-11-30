@@ -1,0 +1,22 @@
+{% extends "layouts/public.j2" %}
+
+{% block body %}
+    <h1>Proteins</h1>
+    <div class="flex justify-content-center w-100">
+        <form id="protein-accession-search" action="{{ url_for("api_protein_path", accession = "ACCESSION") }}" @submit="search($event)">
+            <div class="alert alert-danger fade show" role="alert" v-if="errors.length">
+                <ul class="mb-0">
+                    <li v-for="error in errors">[[ error ]]</li>
+                </ul>
+            </div>
+            <div class="input-group mb-3">
+                <input class="form-control" type="text" v-model="accession" placeholder="Accession">
+
+                <button class="btn btn-primary" type="button" @click="search" :disabled="searching">
+                    <i class="fas fa-search"></i>
+                    search
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
