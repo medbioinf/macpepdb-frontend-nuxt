@@ -1,7 +1,17 @@
 {% extends "layouts/public.j2" %}
 {% block body %}
     <div class="dashboard">
-        <h1>Dashboard</h1>
+        <h1>Welcome to TrypperDB</h1>
+        <div class="card mb-3">
+            <div class="card-body">
+                <p>From here you have two options to search the database:</p>
+                <ol>
+                    <li>Start by searching for a protein by its Accession. From here you can search the peptides contained in the protein.</li>
+                    <li>Start by searching for peptides. There are several possibilities. Search directly for a sequence or a weight, digest a sequence or a protein and use the weight of one of the resulting peptides. You also have the possibility to refine the search with various filters.</li>
+                    <p>Both options are available in the menu.</p>
+                <ol>
+            </div>
+        </div>
         <div class="row mb-3">
             <div class="col col-md-6">
                 <div class="card">
