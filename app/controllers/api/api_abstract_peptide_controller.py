@@ -61,6 +61,7 @@ class ApiAbstractPeptideController(ApplicationController):
                         try:
                             modification_attributes['accession'] = accession_and_name
                             modification_attributes['name'] = accession_and_name
+                            modification_attributes['delta'] = mass_to_int(modification_attributes['delta'])
                             modifications.append(Modification.from_dict(modification_attributes))
                         except Exception as e:
                             errors.append("modification {} is not valid: {}".format(modification_attributes, e))
