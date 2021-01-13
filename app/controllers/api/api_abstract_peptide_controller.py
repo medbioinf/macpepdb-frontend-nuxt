@@ -151,7 +151,7 @@ class ApiAbstractPeptideController(ApplicationController):
                             peptides_query = select(inner_peptide_query.columns).distinct().select_from(protein_join).where(protein_where_clause)
 
                     # Sort by weight
-                    if order_results:
+                    if order_results and not output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
                         peptides_query = peptides_query.order_by(peptides_query.c.weight)
                     
                     if "limit" in data:
