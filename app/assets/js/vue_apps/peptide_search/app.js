@@ -229,6 +229,13 @@ const peptide_search_app_settings = {
             }
             return true;
         },
+        setNewPageManually: debounce(function(event){
+            // page index starts with 0, manuall input will be basaed on 1
+            var new_page = event.target.value - 1;
+            if(new_page < 0) new_page = 0;
+            if(new_page > this.peptide_page_count - 1) new_page = this.peptide_page_count - 1;
+            this.goToPeptidePageNumber(new_page);
+        }, 300)
     },
     computed: {
         sequence(){
@@ -246,6 +253,16 @@ const peptide_search_app_settings = {
         peptide_page_count(){
             return  Math.max(Math.ceil(this.peptide_count/this.peptides_per_page), 1);
             
+        },
+        peptide_pagination(){
+            var pagination = [];
+            for(var i = this.current_peptide_page - 2; i <= this.current_peptide_page + 2; i++) pagination.push(i);
+            pagination = pagination.filter(page => 0 <= page && page < this.peptide_page_count);
+            if(pagination.length > 0){
+                if(pagination[0] > 0) pagination.unshift(0, null);
+                if(pagination[pagination.length - 1] < this.peptide_page_count - 1) pagination.push(null, this.peptide_page_count - 1);
+            }
+            return pagination;
         }
     },
     watch: {

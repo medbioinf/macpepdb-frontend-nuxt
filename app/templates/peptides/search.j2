@@ -341,9 +341,13 @@
 
                 <nav class="d-flex w-100 justify-content-center mt-3" v-if="peptide_page_count > 1">
                     <ul class="pagination flex-wrap">
-                        <li v-for="page_idx in peptide_page_count" class="page-item" :class="{'active': (page_idx - 1) == current_peptide_page}">
-                            <button class="page-link" type="button" @click="goToPeptidePageNumber(page_idx - 1)">
-                                [[ page_idx ]]
+                        <li v-for="page in peptide_pagination" class="page-item" :class="{'active': (page) == current_peptide_page}">
+                            <button v-if="page != null && page != current_peptide_page" page class="page-link" type="button" @click="goToPeptidePageNumber(page)">
+                                [[ page + 1 ]]
+                            </button>
+                            <input v-else-if="page != null && page == current_peptide_page" class="form-control text-center text-decoration-underline" type="number" :value="page + 1" min="1" :max="peptide_page_count" @input="setNewPageManually($event)">
+                            <button v-else page class="page-link" type="button" disabled>
+                                ...
                             </button>
                         </li>
                     </ul>
