@@ -207,7 +207,8 @@ keys:
 * proteome_id: string (Uniprot Proteome Identifier: UP...)
 * is_reviewed: unsigned int (<= 0 means false, > 0 means true)
 * include_count: bool, default: false, optional (includes the peptides count without limit or offset. setting this to false cut the response time by 50%, only accounted for `application/json`-output)
-* order: bool, default: dalse, optional (if true the results are ordered by weight, ignored for `text/plain`-output)
+* order_by: string, default: weight, possible values: `weight` `length` `number_of_missed_cleavages` `sequence`, default: `weight`, optional (ignored for `text/plain`-output)
+* order_descendent : bool, default: false, optional
 
 If `taxonomy_id`, `proteome_id`, `is_reviewed` are used together they will concanted with `and`.
 

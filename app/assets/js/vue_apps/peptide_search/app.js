@@ -88,7 +88,8 @@ const peptide_search_app_settings = {
                 variable_modification_maximum: this.$store.state.modification_filter.variable_modification_maximum,
                 limit: this.peptides_per_page,
                 offset: this.current_peptide_page * this.peptides_per_page,
-                order: true
+                order_by: this.$store.state.order_by,
+                order_direction: this.$store.state.order_direction
             };
             if(this.$store.state.taxonomy_filter.selected_taxonomy) data['taxonomy_id'] = this.$store.state.taxonomy_filter.selected_taxonomy.id;
             data['precursor'] = this.$store.state.mass;
@@ -235,7 +236,13 @@ const peptide_search_app_settings = {
             if(new_page < 0) new_page = 0;
             if(new_page > this.peptide_page_count - 1) new_page = this.peptide_page_count - 1;
             this.goToPeptidePageNumber(new_page);
-        }, 300)
+        }, 300),
+        setOrderBy(event){
+            this.$store.commit('setOrderBy', event.target.value);
+        },
+        setOrderDirection(event){
+            this.$store.commit('setOrderDirection', event.target.value);
+        }
     },
     computed: {
         sequence(){
@@ -263,6 +270,12 @@ const peptide_search_app_settings = {
                 if(pagination[pagination.length - 1] < this.peptide_page_count - 1) pagination.push(null, this.peptide_page_count - 1);
             }
             return pagination;
+        },
+        order_by(){
+            return this.$store.state.order_by;
+        },
+        order_direction(){
+            return this.$store.state.order_direction;
         }
     },
     watch: {

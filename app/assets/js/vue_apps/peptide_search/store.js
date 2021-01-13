@@ -22,7 +22,9 @@ export default new Vuex.Store({
         mass_tolerance_filter: {
             lower_tolerance: 0,
             upper_tolerance: 0
-        }
+        },
+        order_by: 'weight',
+        order_direction: 'asc',
     },
     mutations: {
         setSequence(state, sequence){
@@ -61,6 +63,12 @@ export default new Vuex.Store({
         },
         setUpperMassTolerance(state, upper_tolerance){
             state.mass_tolerance_filter.upper_tolerance = upper_tolerance;
+        },
+        setOrderBy(state, order_by){
+            state.order_by = order_by;
+        },
+        setOrderDirection(state, order_direction){
+            state.order_direction = order_direction;
         }
     }
 });

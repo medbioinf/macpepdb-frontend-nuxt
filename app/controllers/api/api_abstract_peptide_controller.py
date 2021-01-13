@@ -3,7 +3,7 @@ import orjson
 import math
 
 from flask import jsonify, Response
-from sqlalchemy import func, distinct, and_, select
+from sqlalchemy import func, distinct, and_, select, desc, asc
 from sqlalchemy.orm import sessionmaker, aliased
 
 from trypperdb.proteomics.mass.convert import to_int as mass_to_int, to_float as mass_to_float
@@ -22,6 +22,8 @@ from ..application_controller import ApplicationController
 
 class ApiAbstractPeptideController(ApplicationController):
     SUPPORTED_OUTPUTS = ['application/json', 'application/octet-stream', 'text/plain']
+    SUPPORTED_ORDER_COLUMNS = ['weight', 'length', 'sequence', 'number_of_missed_cleavages']
+    SUPPORTED_ORDER_DIRECTIONS = ['asc', 'desc']
 
     @staticmethod
     def _search(request, peptide_class):
@@ -32,9 +34,21 @@ class ApiAbstractPeptideController(ApplicationController):
         if 'include_count' in data and isinstance(data['include_count'], bool):
             include_count = data['include_count']
 
-        order_results = False
-        if 'order' in data and isinstance(data['order'], bool):
-            order_results = data['order']
+        order_by = None
+        order_direction = asc
+        if 'order_by' in data:
+            if isinstance(data['order_by'], str) and data['order_by'] in ApiAbstractPeptideController.SUPPORTED_ORDER_COLUMNS:
+                order_by = data['order_by']
+            else:
+                errors.append(f"'order_by' must be a string with one of following values: {', '.join(ApiAbstractPeptideController.SUPPORTED_ORDER_COLUMNS)}")
+        
+
+        if 'order_direction' in data:
+            if isinstance(data['order_direction'], str) and data['order_direction'] in ApiAbstractPeptideController.SUPPORTED_ORDER_DIRECTIONS:
+                if data['order_direction'] == 'desc':
+                    order_direction = desc
+            else:
+                errors.append(f"'order_direction' must be a string with one of following values: {', '.join(ApiAbstractPeptideController.SUPPORTED_ORDER_DIRECTIONS)}")
 
         # Get accept header (default 'application/json'), split by ',' in case multiple mime types where supported and take the first one
         output_style = request.headers.get('accept', default=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]).split(',')[0].strip()
@@ -150,8 +164,8 @@ class ApiAbstractPeptideController(ApplicationController):
                             peptides_query = select(inner_peptide_query.columns).distinct().select_from(protein_join).where(protein_where_clause)
 
                     # Sort by weight
-                    if order_results and not output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
-                        peptides_query = peptides_query.order_by(peptides_query.c.weight)
+                    if order_by and not output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
+                        peptides_query = peptides_query.order_by(order_direction(peptides_query.c[order_by]))
                     
                     # Note about offset and limit: It is much faster to fetch data from server and discard rows below the offset and stop the fetching when the limit is reached, instead of applying LIMIT and OFFSET directly to the query.
                     # Even on high offsets, which discards a lot of rows, this approach is faster.
