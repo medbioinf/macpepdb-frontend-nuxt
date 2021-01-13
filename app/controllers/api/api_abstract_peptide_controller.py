@@ -74,9 +74,7 @@ class ApiAbstractPeptideController(ApplicationController):
             modification_collection = ModificationCollection(modifications)
         except Exception as e:
             errors.append("{}".format(e))
-
-        peptides = []
-        peptide_count = 0
+        
         if not len(errors):
             if "precursor" in data:
                 if isinstance(data["precursor"], float) or isinstance(data["precursor"], int):
