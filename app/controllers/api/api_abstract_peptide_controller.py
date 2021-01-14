@@ -161,11 +161,13 @@ class ApiAbstractPeptideController(ApplicationController):
                             protein_join = inner_peptide_query.join(proteins_peptides_table, proteins_peptides_table.c.peptide_id == inner_peptide_query.c.id)
                             protein_join = protein_join.join(Protein.__table__, Protein.id == proteins_peptides_table.c.protein_id)
                             # Create select around the inner query
-                            peptides_query = select(inner_peptide_query.columns).distinct().select_from(protein_join).where(protein_where_clause)
+                            peptides_query = select(inner_peptide_query.columns).select_from(protein_join).where(protein_where_clause)
 
                     # Sort by weight
                     if order_by and not output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
                         peptides_query = peptides_query.order_by(order_direction(peptides_query.c[order_by]))
+
+                    peptides_query = peptides_query.distinct()
                     
                     # Note about offset and limit: It is much faster to fetch data from server and discard rows below the offset and stop the fetching when the limit is reached, instead of applying LIMIT and OFFSET directly to the query.
                     # Even on high offsets, which discards a lot of rows, this approach is faster.
