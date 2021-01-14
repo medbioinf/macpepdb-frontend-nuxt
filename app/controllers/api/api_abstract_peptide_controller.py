@@ -223,8 +223,7 @@ class ApiAbstractPeptideController(ApplicationController):
                     is_first_chunk = True
                     peptide_counter = 0
                     written_peptide_counter = 0
-                    continue_result_streaming = True
-                    while continue_result_streaming:
+                    while written_peptide_counter < limit:
                         # Fetch 10000 results
                         peptides_chunk = peptides_cursor.fetchmany(10000)
                         # Stop loop if no results were fetched
@@ -239,7 +238,7 @@ class ApiAbstractPeptideController(ApplicationController):
                         previous_peptide_row = next(peptides_chunk_iter)
                         # Iterate over the remaining rows in this chunk
                         for peptide_row in peptides_chunk_iter:
-                            # Increase counter
+                            # Increase counter for each peptide
                             peptide_counter += 1
                             # Write peptide to stream if peptide counter is larger than offset
                             if peptide_counter > offset:
@@ -256,14 +255,18 @@ class ApiAbstractPeptideController(ApplicationController):
                             previous_peptide_row = peptide_row
                             # Break for-loop if limit - 1 peptides where written and stop result streaming. After the last peptide is written (after the for loop) streaming is stopped.
                             if written_peptide_counter == limit - 1:
-                                continue_result_streaming = False
                                 break
-                        # Now write the last peptide without a ',' at the end
-                        peptide_dict = {str(key): value for key, value in previous_peptide_row.items()}
-                        peptide_dict["weight"] = mass_to_float(peptide_dict["weight"])
-                        peptide_dict['peff_notation_of_modifications'] = ''
-                        yield orjson.dumps(peptide_dict)
-                        is_first_chunk = False
+                        # Increase counter for last peptide
+                        peptide_counter += 1
+                        if peptide_counter > offset:
+                            # Now write the last peptide without a ',' at the end
+                            peptide_dict = {str(key): value for key, value in previous_peptide_row.items()}
+                            peptide_dict["weight"] = mass_to_float(peptide_dict["weight"])
+                            peptide_dict['peff_notation_of_modifications'] = ''
+                            yield orjson.dumps(peptide_dict)
+                            # Increase written peptides
+                            written_peptide_counter += 1
+                            is_first_chunk = False
                     # Close array and object
                     yield b"]}"
             result_key = 'peptides' if peptide_class == Peptide else 'decoys'
@@ -283,8 +286,7 @@ class ApiAbstractPeptideController(ApplicationController):
                     is_first_chunk = True
                     peptide_counter = 0
                     written_peptide_counter = 0
-                    continue_result_streaming = True
-                    while continue_result_streaming:
+                    while written_peptide_counter < limit:
                         # Fetch 10000 results
                         peptides_chunk = peptides_cursor.fetchmany(10000)
                         # Stop loop if no results were fetched
@@ -299,7 +301,7 @@ class ApiAbstractPeptideController(ApplicationController):
                         previous_peptide_row = next(peptides_chunk_iter)
                         # Iterate over the remaining rows in this chunk
                         for peptide_row in peptides_chunk_iter:
-                            # Increase counter
+                            # Increase counter for each peptide
                             peptide_counter += 1
                             # Write peptide to stream if peptide counter is larger than offset
                             if peptide_counter > offset:
@@ -314,16 +316,20 @@ class ApiAbstractPeptideController(ApplicationController):
                                 written_peptide_counter += 1
                             # Mark the current peptide as previous peptide for next iteration
                             previous_peptide_row = peptide_row
-                            # Break for-loop if limit - 1 peptides where written and stop result streaming. After the last peptide is written (after the for loop) streaming is stopped.
+                            # Break for-loop if limit - 1 peptides where written. After the last peptide is written (after the for loop) streaming is stopped (while loop).
                             if written_peptide_counter == limit - 1:
-                                continue_result_streaming = False
                                 break
+                        # Increase counter for the last peptide in chunk
+                        peptide_counter += 1
                         # Now write the last peptide without a '\n' at the end
-                        peptide_dict = {str(key): value for key, value in previous_peptide_row.items()}
-                        peptide_dict["weight"] = mass_to_float(peptide_dict["weight"])
-                        peptide_dict['peff_notation_of_modifications'] = ''
-                        yield orjson.dumps(peptide_dict)
-                        is_first_chunk = False
+                        if peptide_counter > offset:
+                            peptide_dict = {str(key): value for key, value in previous_peptide_row.items()}
+                            peptide_dict["weight"] = mass_to_float(peptide_dict["weight"])
+                            peptide_dict['peff_notation_of_modifications'] = ''
+                            yield orjson.dumps(peptide_dict)
+                            # Increase written peptides
+                            written_peptide_counter += 1
+                            is_first_chunk = False
             return Response(generate_octet_stream(peptides_query, offset, limit), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[1])
         elif output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
             def generate_txt_stream(peptide_query, peptide_class, offset: int, limit: int):
@@ -340,8 +346,7 @@ class ApiAbstractPeptideController(ApplicationController):
                     is_first_chunk = True
                     peptide_counter = 0
                     written_peptide_counter = 0
-                    continue_result_streaming = True
-                    while continue_result_streaming:
+                    while written_peptide_counter < limit:
                         # Fetch 10000 results
                         peptides_chunk = peptides_cursor.fetchmany(10000)
                         # Stop loop if no results were fetched
@@ -356,7 +361,7 @@ class ApiAbstractPeptideController(ApplicationController):
                         previous_peptide_row = next(peptides_chunk_iter)
                         # Iterate over the remaining rows in this chunk
                         for peptide_row in peptides_chunk_iter:
-                            # Increase counter
+                            # Increase counter for each peptide
                             peptide_counter += 1
                             # Write peptide to stream if peptide counter is larger than offset
                             if peptide_counter > offset:
@@ -364,17 +369,20 @@ class ApiAbstractPeptideController(ApplicationController):
                                 yield f"{peptide_class.FASTA_HEADER_PREFIX}\n{previous_peptide_row['sequence']}"
                                 # ... and append new line
                                 yield "\n"
-                                written_peptide_counter
                                 # Increase written peptides
                                 written_peptide_counter += 1
                             # Mark the current peptide as previous peptide for next iteration
                             previous_peptide_row = peptide_row
                             # Break for-loop if limit - 1 peptides where written and stop result streaming. After the last peptide is written (after the for loop) streaming is stopped.
                             if written_peptide_counter == limit - 1:
-                                continue_result_streaming = False
                                 break
-                        # Now write the last peptide without a new line at the end
-                        yield f"{peptide_class.FASTA_HEADER_PREFIX}\n{previous_peptide_row['sequence']}"
-                        is_first_chunk = False
+                        # Increase counter for last peptide
+                        peptide_counter += 1
+                        if peptide_counter > offset:
+                            # Now write the last peptide without a new line at the end
+                            yield f"{peptide_class.FASTA_HEADER_PREFIX}\n{previous_peptide_row['sequence']}"
+                            # Increase written peptides
+                            written_peptide_counter += 1
+                            is_first_chunk = False
             return Response(generate_txt_stream(peptides_query, peptide_class, offset, limit), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2])
         
