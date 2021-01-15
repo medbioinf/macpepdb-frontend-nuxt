@@ -183,3 +183,76 @@ class ApiPeptideControllerTestCase(unittest.TestCase):
             # Test if peptides on position j are the same (fasta format does not contains the length or id, so we have to compare the sequence)
             for j in range(len(chunk_from_all_results)):
                 self.assertEqual(chunk[j].sequence, chunk_from_all_results[j].sequence)
+
+    def test_count(self):
+        """
+        Tests if the reported count is equals the actual number of results with different filters. `limit` and `offset` are not considered, because they are not applied to the actual query.
+        """
+        URL = "http://localhost:3000/api/peptides/search"
+
+        NO_MODIFICATION_REQUEST_BODY = {
+            "include_count": True,
+            "modifications": [],
+            "lower_precursor_tolerance_ppm": 5,
+            "upper_precursor_tolerance_ppm": 5,
+            "variable_modification_maximum": 0,
+            "precursor": 859.49506802369,
+            "order_by": "weight",
+            "order_direction": "asc"
+        }
+
+        MODIFICATION_REQUEST_BODY = {
+            "include_count": True,
+            "modifications": [
+                {
+                    "amino_acid": "C",
+                    "position": "anywhere",
+                    "is_static": True,
+                    "delta": 57.021464
+                }
+            ],
+            "lower_precursor_tolerance_ppm": 5,
+            "upper_precursor_tolerance_ppm": 5,
+            "variable_modification_maximum": 0,
+            "precursor": 859.49506802369,
+            "order_by": "weight",
+            "order_direction": "asc"
+        }
+
+        TAXONOMY_REQUEST_BODY = {
+            "include_count": True,
+            "taxonomy_id": 9606,
+            "modifications": [],
+            "lower_precursor_tolerance_ppm": 5,
+            "upper_precursor_tolerance_ppm": 5,
+            "variable_modification_maximum": 0,
+            "precursor": 859.49506802369,
+            "order_by": "weight",
+            "order_direction": "asc"
+        }
+
+        MODIFICATION_AND_TAXONOMY_REQUEST_BODY = {
+            "include_count": True,
+            "taxonomy_id": 9606,
+            "modifications": [
+                {
+                    "amino_acid": "C",
+                    "position": "anywhere",
+                    "is_static": True,
+                    "delta": 57.021464
+                }
+            ],
+            "lower_precursor_tolerance_ppm": 5,
+            "upper_precursor_tolerance_ppm": 5,
+            "variable_modification_maximum": 0,
+            "precursor": 859.49506802369,
+            "order_by": "weight",
+            "order_direction": "asc"
+        }
+
+        for request_body in [NO_MODIFICATION_REQUEST_BODY, MODIFICATION_REQUEST_BODY, TAXONOMY_REQUEST_BODY, MODIFICATION_AND_TAXONOMY_REQUEST_BODY]:
+            res = requests.post(URL, json=request_body, headers={'Content-Type': 'application/json', 'Accept': 'application/json'})
+            self.assertTrue(res.ok)
+            response_body = res.json()
+            self.assertEqual(response_body['count'], len(response_body['peptides']))
+
