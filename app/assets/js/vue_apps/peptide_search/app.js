@@ -236,7 +236,7 @@ const peptide_search_app_settings = {
             if(new_page < 0) new_page = 0;
             if(new_page > this.peptide_page_count - 1) new_page = this.peptide_page_count - 1;
             this.goToPeptidePageNumber(new_page);
-        }, 300),
+        }, 400),
         setOrderBy(event){
             this.$store.commit('setOrderBy', event.target.value);
         },
