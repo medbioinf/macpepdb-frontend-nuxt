@@ -366,18 +366,25 @@
                     </tbody>
                 </table>
 
-                <nav class="d-flex w-100 justify-content-center mt-3" v-if="peptide_page_count > 1">
-                    <ul class="pagination flex-wrap">
-                        <li v-for="page in peptide_pagination" class="page-item" :class="{'active': (page) == current_peptide_page}">
-                            <button v-if="page != null && page != current_peptide_page" page class="page-link" type="button" @click="goToPeptidePageNumber(page)">
-                                [[ page + 1 ]]
-                            </button>
-                            <input v-else-if="page != null && page == current_peptide_page" class="form-control text-center text-decoration-underline" type="number" :value="page + 1" min="1" :max="peptide_page_count" @input="setNewPageManually($event)">
-                            <button v-else page class="page-link" type="button" disabled>
-                                ...
-                            </button>
-                        </li>
-                    </ul>
+                <nav class="mt-3" v-if="peptide_page_count > 1">
+                    <div class="col d-flex justify-content-center">
+                        <ul class="pagination flex-wrap">
+                            <li v-for="page in peptide_pagination" class="page-item" :class="{'active': (page) == current_peptide_page}">
+                                <button v-if="page != null && page != current_peptide_page" page class="page-link" type="button" @click="goToPeptidePageNumber(page)">
+                                    [[ page + 1 ]]
+                                </button>
+                                <input v-else-if="page != null && page == current_peptide_page" class="form-control text-center text-decoration-underline" type="number" :value="page + 1" min="1" :max="peptide_page_count" @input="setNewPageManually($event)">
+                                <button v-else page class="page-link" type="button" disabled>
+                                    ...
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col d-flex justify-content-center">
+                        <small>
+                            Hint: You can manually write a page number into the selected page (the one with the blue background). It will automatically jump to the given page.
+                        </small>
+                    </div>
                 </nav>
             </div>
             <div id="search-errors" class="alert alert-danger fade show" role="alert" v-if="errors.length">
