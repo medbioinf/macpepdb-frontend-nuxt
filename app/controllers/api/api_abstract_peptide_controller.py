@@ -24,6 +24,7 @@ class ApiAbstractPeptideController(ApplicationController):
     SUPPORTED_OUTPUTS = ['application/json', 'application/octet-stream', 'text/plain']
     SUPPORTED_ORDER_COLUMNS = ['weight', 'length', 'sequence', 'number_of_missed_cleavages']
     SUPPORTED_ORDER_DIRECTIONS = ['asc', 'desc']
+    FASTA_SEQUENCE_LEN = 60
 
     @staticmethod
     def _search(request, peptide_class):
@@ -360,15 +361,22 @@ class ApiAbstractPeptideController(ApplicationController):
                         # Get first result
                         previous_peptide_row = next(peptides_chunk_iter)
                         # Iterate over the remaining rows in this chunk
-                        for peptide_row in peptides_chunk_iter:
+                        for row_idx, peptide_row in enumerate(peptides_chunk_iter):
                             # Increase counter for each peptide
                             peptide_counter += 1
+                            # Add newline to stream, if this is not the first peptide
+                            if row_idx > 0:
+                                yield "\n"
                             # Write peptide to stream if peptide counter is larger than offset
                             if peptide_counter > offset:
                                 # Write the previous peptide to stream ...
-                                yield f"{peptide_class.FASTA_HEADER_PREFIX}\n{previous_peptide_row['sequence']}"
-                                # ... and append new line
-                                yield "\n"
+                                yield f">lcl|PEPTIDE_{previous_peptide_row['id']}"
+                                # Write sequence in chunks of 60 amino acids ...
+                                seq_chunk_start = 0
+                                while seq_chunk_start < len(previous_peptide_row['sequence']):
+                                    # Write sequence from seq_chunk_start to seq_chunk_start+ApiAbstractPeptideController.FASTA_SEQUENCE_LEN (explicit end)
+                                    yield f"\n{previous_peptide_row['sequence'][seq_chunk_start:seq_chunk_start+ApiAbstractPeptideController.FASTA_SEQUENCE_LEN]}"
+                                    seq_chunk_start += ApiAbstractPeptideController.FASTA_SEQUENCE_LEN
                                 # Increase written peptides
                                 written_peptide_counter += 1
                             # Mark the current peptide as previous peptide for next iteration
@@ -380,7 +388,13 @@ class ApiAbstractPeptideController(ApplicationController):
                         peptide_counter += 1
                         if peptide_counter > offset:
                             # Now write the last peptide without a new line at the end
-                            yield f"{peptide_class.FASTA_HEADER_PREFIX}\n{previous_peptide_row['sequence']}"
+                            yield f"\n>lcl|PEPTIDE_{previous_peptide_row['id']}"
+                            # Write sequence in chunks of 60 amino acids ...
+                            seq_chunk_start = 0
+                            while seq_chunk_start < len(previous_peptide_row['sequence']):
+                                # Write sequence from seq_chunk_start to seq_chunk_start+ApiAbstractPeptideController.FASTA_SEQUENCE_LEN (explicit end)
+                                yield f"\n{previous_peptide_row['sequence'][seq_chunk_start:seq_chunk_start+ApiAbstractPeptideController.FASTA_SEQUENCE_LEN]}"
+                                seq_chunk_start += ApiAbstractPeptideController.FASTA_SEQUENCE_LEN
                             # Increase written peptides
                             written_peptide_counter += 1
                             is_first_chunk = False

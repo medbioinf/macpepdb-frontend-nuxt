@@ -286,13 +286,13 @@ Bytestream which contains one peptide in JSON-format per line.
 #### output (text/plain))
 Text stream in fasta format.
 ```
->PEPTIDE_
+>lcl|PEPTIDE_<ID>
 JJAMVWK
->PEPTIDE_
+>lcl|PEPTIDE_<ID>
 WMAJJKV
->PEPTIDE_
+>lcl|PEPTIDE_<ID>
 MVJAJWK
->PEPTIDE_
+>lcl|PEPTIDE_<ID>
 AJWJVMK
 ```
 
