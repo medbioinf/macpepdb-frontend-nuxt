@@ -205,10 +205,10 @@ keys:
 * offset: unsigned int (optional)
 * taxonomy_id: unsigned int (Uniprot Taxonomy Identifier)
 * proteome_id: string (Uniprot Proteome Identifier: UP...)
-* is_reviewed: unsigned int (<= 0 means false, > 0 means true)
+* is_reviewed: bool, default: not set, optional (selects from which database the peptides will be from, not set: Swiss-Prot + TrEMBL, true: SwissProt, false: TrEMBL)
 * include_count: bool, default: false, optional (includes the peptides count without limit or offset. setting this to false cut the response time by 50%, only accounted for `application/json`-output)
 * order_by: string, default: weight, possible values: `weight` `length` `number_of_missed_cleavages` `sequence`, default: `weight`, optional (ignored for `text/plain`-output)
-* order_descendent : bool, default: false, optional
+* order_descendent: bool, default: false, optional
 
 If `taxonomy_id`, `proteome_id`, `is_reviewed` are used together they will concanted with `and`.
 

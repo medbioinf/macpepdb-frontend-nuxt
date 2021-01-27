@@ -142,8 +142,8 @@ class ApiAbstractPeptideController(ApplicationController):
                                 errors.append("proteome_id has to be of type string")
 
                         if "is_reviewed" in data:
-                            if isinstance(data["is_reviewed"], int):
-                                protein_conditions.append(Protein.is_reviewed == (data["is_reviewed"] > 0))
+                            if isinstance(data["is_reviewed"], bool):
+                                protein_conditions.append(Protein.is_reviewed == data["is_reviewed"])
                             else:
                                 errors.append("is_reviewed has to be of type int")
 
