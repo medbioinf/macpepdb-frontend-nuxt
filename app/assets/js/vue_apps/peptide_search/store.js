@@ -25,6 +25,7 @@ export default new Vuex.Store({
         },
         order_by: 'weight',
         order_direction: 'asc',
+        is_reviewed: null
     },
     mutations: {
         setSequence(state, sequence){
@@ -69,6 +70,9 @@ export default new Vuex.Store({
         },
         setOrderDirection(state, order_direction){
             state.order_direction = order_direction;
+        },
+        setIsReviewed(state, is_reviewed){
+            state.is_reviewed = is_reviewed;
         }
     }
 });

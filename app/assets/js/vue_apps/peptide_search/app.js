@@ -92,6 +92,7 @@ const peptide_search_app_settings = {
                 order_direction: this.$store.state.order_direction
             };
             if(this.$store.state.taxonomy_filter.selected_taxonomy) data['taxonomy_id'] = this.$store.state.taxonomy_filter.selected_taxonomy.id;
+            if(this.$store.state.is_reviewed != null) data['is_reviewed'] = this.$store.state.is_reviewed;
             data['precursor'] = this.$store.state.mass;
             return data;
         },
@@ -276,6 +277,14 @@ const peptide_search_app_settings = {
         },
         order_direction(){
             return this.$store.state.order_direction;
+        },
+        is_reviewed: {
+            get(){
+                return this.$store.state.is_reviewed;
+            },
+            set(value){
+                this.$store.commit('setIsReviewed', value);
+            }
         }
     },
     watch: {
