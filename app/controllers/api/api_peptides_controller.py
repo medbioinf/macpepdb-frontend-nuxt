@@ -13,7 +13,7 @@ class ApiPeptidesController(ApiAbstractPeptideController):
     @staticmethod
     @app.route("/api/peptides/search", endpoint="api_peptide_search_path", methods=["POST"])
     def search():
-        return ApiAbstractPeptideController._search(request, Peptide)
+        return ApiAbstractPeptideController._search(request)
 
     @staticmethod
     @app.route("/api/peptides/<string:sequence>", endpoint="api_peptide_path", methods=["GET"])

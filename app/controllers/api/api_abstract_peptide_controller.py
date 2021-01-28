@@ -27,7 +27,7 @@ class ApiAbstractPeptideController(ApplicationController):
     FASTA_SEQUENCE_LEN = 60
 
     @staticmethod
-    def _search(request, peptide_class):
+    def _search(request):
         errors = []
         data = request.get_json()
 
@@ -102,67 +102,64 @@ class ApiAbstractPeptideController(ApplicationController):
                         data["upper_precursor_tolerance_ppm"],
                         data["variable_modification_maximum"]
                     )
-                    where_clause = where_clause_builder.build(peptide_class)
+                    where_clause = where_clause_builder.build(Peptide)
 
-                    count_query = select([func.count(distinct(peptide_class.id))]).where(where_clause).select_from(peptide_class.__table__)
+                    count_query = select([func.count(distinct(Peptide.id))]).where(where_clause).select_from(Peptide.__table__)
                     peptides_query = None
                     if not output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
-                        peptides_query = peptide_class.__table__.select(where_clause)
+                        peptides_query = Peptide.__table__.select(where_clause)
                     else:
-                        peptides_query = select([peptide_class.id, peptide_class.sequence]).where(where_clause).distinct()
+                        peptides_query = select([Peptide.id, Peptide.sequence]).where(where_clause).distinct()
 
+                    # Array for conditions on proteins
+                    protein_conditions = []
+                    if "taxonomy_id" in data:
+                        if isinstance(data["taxonomy_id"], int):
+                            # Recursively select all taxonomies below the given one
+                            recursive_query = select(Taxonomy.__table__.columns).where(Taxonomy.id == data["taxonomy_id"]).cte(recursive=True)
+                            parent_taxonomies = recursive_query.alias()
+                            child_taxonomies = Taxonomy.__table__.alias()
+                            sub_taxonomies = recursive_query.union_all(select(child_taxonomies.columns).where(child_taxonomies.c.parent_id == parent_taxonomies.c.id))
+                            sub_species_id_query = select([sub_taxonomies.c.id]).where(sub_taxonomies.c.rank == TaxonomyRank.SPECIES)
 
-                    # The following filters only work for peptides because they contain a protein join
-                    if peptide_class == Peptide:
-                        protein_conditions = []
+                            with trypperdb.connect() as connection:
+                                sub_species_ids = [row[0] for row in connection.execute(sub_species_id_query).fetchall()]
+                            
+                            if len(sub_species_ids) == 1:
+                                protein_conditions.append(Protein.taxonomy_id == sub_species_ids[0])
+                            elif len(sub_species_ids) > 1:
+                                protein_conditions.append(Protein.taxonomy_id.in_(sub_species_ids))
+                        else:
+                            errors.append("taxonomy_id has to be of type int")
 
-                        if "taxonomy_id" in data:
-                            if isinstance(data["taxonomy_id"], int):
-                                # Recursively select all taxonomies below the given one
-                                recursive_query = select(Taxonomy.__table__.columns).where(Taxonomy.id == data["taxonomy_id"]).cte(recursive=True)
-                                parent_taxonomies = recursive_query.alias()
-                                child_taxonomies = Taxonomy.__table__.alias()
-                                sub_taxonomies = recursive_query.union_all(select(child_taxonomies.columns).where(child_taxonomies.c.parent_id == parent_taxonomies.c.id))
-                                sub_species_id_query = select([sub_taxonomies.c.id]).where(sub_taxonomies.c.rank == TaxonomyRank.SPECIES)
+                    if "proteome_id" in data:
+                        if isinstance(data["proteome_id"], str):
+                            protein_conditions.append(Protein.proteome_id == data["proteome_id"])
+                        else:
+                            errors.append("proteome_id has to be of type string")
 
-                                with trypperdb.connect() as connection:
-                                    sub_species_ids = [row[0] for row in connection.execute(sub_species_id_query).fetchall()]
-                                
-                                if len(sub_species_ids) == 1:
-                                    protein_conditions.append(Protein.taxonomy_id == sub_species_ids[0])
-                                elif len(sub_species_ids) > 1:
-                                    protein_conditions.append(Protein.taxonomy_id.in_(sub_species_ids))
-                            else:
-                                errors.append("taxonomy_id has to be of type int")
+                    if "is_reviewed" in data:
+                        if isinstance(data["is_reviewed"], bool):
+                            protein_conditions.append(Protein.is_reviewed == data["is_reviewed"])
+                        else:
+                            errors.append("is_reviewed has to be of type int")
 
-                        if "proteome_id" in data:
-                            if isinstance(data["proteome_id"], str):
-                                protein_conditions.append(Protein.proteome_id == data["proteome_id"])
-                            else:
-                                errors.append("proteome_id has to be of type string")
+                    if len(protein_conditions):
+                        # Concatenate conditions with and
+                        protein_where_clause = and_(*protein_conditions)
+                        # Rebuild count query
+                        inner_count_query = select([Peptide.id]).where(where_clause).select_from(Peptide.__table__).alias('weight_specific_peptides')
+                        protein_join = inner_count_query.join(proteins_peptides_table, proteins_peptides_table.c.peptide_id == inner_count_query.c.id)
+                        protein_join = protein_join.join(Protein.__table__, Protein.id == proteins_peptides_table.c.protein_id)
+                        count_query = select([func.count(distinct(inner_count_query.c.id))]).select_from(protein_join).where(protein_where_clause)
 
-                        if "is_reviewed" in data:
-                            if isinstance(data["is_reviewed"], bool):
-                                protein_conditions.append(Protein.is_reviewed == data["is_reviewed"])
-                            else:
-                                errors.append("is_reviewed has to be of type int")
-
-                        if len(protein_conditions):
-                            # Concatenate conditions with and
-                            protein_where_clause = and_(*protein_conditions)
-                            # Rebuild count query
-                            inner_count_query = select([peptide_class.id]).where(where_clause).select_from(peptide_class.__table__).alias('weight_specific_peptides')
-                            protein_join = inner_count_query.join(proteins_peptides_table, proteins_peptides_table.c.peptide_id == inner_count_query.c.id)
-                            protein_join = protein_join.join(Protein.__table__, Protein.id == proteins_peptides_table.c.protein_id)
-                            count_query = select([func.count(distinct(inner_count_query.c.id))]).select_from(protein_join).where(protein_where_clause)
-
-                            # Create alais for the inner query
-                            inner_peptide_query = peptides_query.alias('weight_specific_peptides')
-                            # Join innder query with proteins
-                            protein_join = inner_peptide_query.join(proteins_peptides_table, proteins_peptides_table.c.peptide_id == inner_peptide_query.c.id)
-                            protein_join = protein_join.join(Protein.__table__, Protein.id == proteins_peptides_table.c.protein_id)
-                            # Create select around the inner query
-                            peptides_query = select(inner_peptide_query.columns).select_from(protein_join).where(protein_where_clause)
+                        # Create alais for the inner query
+                        inner_peptide_query = peptides_query.alias('weight_specific_peptides')
+                        # Join innder query with proteins
+                        protein_join = inner_peptide_query.join(proteins_peptides_table, proteins_peptides_table.c.peptide_id == inner_peptide_query.c.id)
+                        protein_join = protein_join.join(Protein.__table__, Protein.id == proteins_peptides_table.c.protein_id)
+                        # Create select around the inner query
+                        peptides_query = select(inner_peptide_query.columns).select_from(protein_join).where(protein_where_clause)
 
                     # Sort by weight
                     if order_by and not output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
@@ -199,7 +196,7 @@ class ApiAbstractPeptideController(ApplicationController):
             }), 422
 
         if output_style ==  ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]:
-            def generate_json_stream(peptides_query, peptide_count_query, result_key: str, include_count: bool, offset: int, limit: int):
+            def generate_json_stream(peptides_query, peptide_count_query, include_count: bool, offset: int, limit: int):
                 """
                 Serialize the given peptides as JSON objects, structure: {'result_key': [peptide_json, ...]}
                 @param peptides_query The query for peptides
@@ -217,8 +214,7 @@ class ApiAbstractPeptideController(ApplicationController):
                     if include_count:
                         peptide_count = db_connection.execute(peptide_count_query).fetchone()[0]
                         yield f"\"count\":{peptide_count},".encode()
-                    # Add key `result_key` object with open array
-                    yield f"\"{result_key}\":[".encode()
+                    yield f"\"peptides\":[".encode()
                     # Create cursor to stream results
                     peptides_cursor = db_connection.execution_options(stream_results=True).execute(peptides_query)
                     is_first_chunk = True
@@ -270,9 +266,8 @@ class ApiAbstractPeptideController(ApplicationController):
                             is_first_chunk = False
                     # Close array and object
                     yield b"]}"
-            result_key = 'peptides' if peptide_class == Peptide else 'decoys'
             # Send stream
-            return Response(generate_json_stream(peptides_query, count_query, result_key, include_count, offset, limit), content_type=f"{ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]}; charset=utf-8")
+            return Response(generate_json_stream(peptides_query, count_query, include_count, offset, limit), content_type=f"{ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]}; charset=utf-8")
         elif output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[1]:
             def generate_octet_stream(peptides_query, offset: int, limit: int):
                 """
@@ -333,7 +328,7 @@ class ApiAbstractPeptideController(ApplicationController):
                             is_first_chunk = False
             return Response(generate_octet_stream(peptides_query, offset, limit), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[1])
         elif output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
-            def generate_txt_stream(peptide_query, peptide_class, offset: int, limit: int):
+            def generate_txt_stream(peptide_query, offset: int, limit: int):
                 """
                 This will generate a stream of peptides in fasta format.
                 @param peptides_query The query for peptides
@@ -398,5 +393,5 @@ class ApiAbstractPeptideController(ApplicationController):
                             # Increase written peptides
                             written_peptide_counter += 1
                             is_first_chunk = False
-            return Response(generate_txt_stream(peptides_query, peptide_class, offset, limit), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2])
+            return Response(generate_txt_stream(peptides_query, offset, limit), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2])
         
