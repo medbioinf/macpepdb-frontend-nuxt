@@ -24,14 +24,14 @@
                         <figure class="matplotlib bar-chart">{{ peptide_partitions_svg }}</figure>
 
                         <button class="btn btn-outline-link btn-sm pl-0" type="button" data-toggle="collapse" data-target="#peptide-estimation-description" aria-expanded="false" aria-controls="peptide-estimation-description">
-                            These are only estimations and can change slightly from time to time. Read why ....
+                            These are only estimates that fluctuate a little from time to time. Read why ....
                             <i class="fas"></i>
                         </button>
 
                         <div class="collapse" id="peptide-estimation-description">
                             <p>
                                 Counting the peptides with <code>SELECT count(*) ...</code> needs serveral minutes for each partition and locks the table for other operations.
-                                With PostgreSQLs <code>pg_class</code>-view it is possible to create a good estimation, based on the actual diskspace.
+                                With PostgreSQLs <code>pg_class</code>-view it is possible to create a good estimation, based on the actual diskspace. This view will change from time to time, due to internal maintenance work by PostgreSQL itself.
                             </p>
                         </div>
                     </div>
