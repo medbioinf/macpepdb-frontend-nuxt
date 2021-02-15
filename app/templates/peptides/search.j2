@@ -25,7 +25,7 @@
             <div class="row mb-3">
                 <label for="variable-modification-maximum" class="col-sm-2 col-form-label">Variable modification maximum*</label>
                 <div class="col-sm-10 d-flex align-items-center">
-                    <input id="variable-modification-maximum" class="form-control mb-3" type="number" min="0" :value="variable_modification_maximum" @input="setVariableModificationMaximum">
+                    <input id="variable-modification-maximum" class="form-control mb-3" type="number" min="0" v-model.number="variable_modification_maximum">
                 </div>
             </div>
 
@@ -224,14 +224,14 @@
             <div class="row mb-3">
                 <label for="lower-mass-tolerance" class="col-sm-2 col-form-label">Lower precursor tolerance in ppm*</label>
                 <div class="col-sm-10 d-flex align-items-center">
-                    <input id="lower-mass-tolerance" class="form-control" type="number" min="0" :value="lower_tolerance" @input="setLowerTolerance">    
+                    <input id="lower-mass-tolerance" class="form-control" type="number" min="0" v-model.number="lower_tolerance">    
                 </div>
             </div>
 
             <div class="row mb-3">
                 <label for="upper-mass-tolerance" class="col-sm-2 col-form-label">Upper precursor tolerance in ppm*</label>
                 <div class="col-sm-10 d-flex align-items-center">
-                    <input id="upper-mass-tolerance" class="form-control" type="number" min="0" :value="upper_tolerance" @input="setUpperTolerance"> 
+                    <input id="upper-mass-tolerance" class="form-control" type="number" min="0" v-model.number="upper_tolerance"> 
                 </div>
             </div>
         </div>
@@ -310,7 +310,7 @@
                 <div class="row mb-3">
                     <label for="order-by" class="col-sm-2 col-form-label">Order by</label>
                     <div class="col-sm-10 d-flex align-items-center">
-                        <select id="order-by" class="form-select" :value="order_by" @change="setOrderBy($event)">
+                        <select id="order-by" class="form-select" v-model="order_by">
                             <option value="weight">Mass</option>
                             <option value="length">Length</option>
                             <option value="sequence">Sequence</option>
@@ -322,7 +322,7 @@
                 <div class="row mb-3">
                     <label for="order-by" class="col-sm-2 col-form-label">Order direction</label>
                     <div class="col-sm-10 d-flex align-items-center">
-                        <select class="form-select" :value="order_direction" @change="setOrderDirection($event)">
+                        <select class="form-select" v-model="order_direction">
                             <option value="asc">Ascending</option>
                             <option value="desc">Descending</option>
                         </select>

@@ -1,4 +1,3 @@
-
 const EMPTY_MODIFICATION = {
     amino_acid: null,
     position: null,
@@ -27,13 +26,6 @@ export default {
         removeModification(modification_idx){
             this.$store.commit('removeModification', modification_idx);
         },
-        setVariableModificationMaximum(event){
-            var value = parseInt(event.target.value);
-            if(!Number.isNaN(value) && value > -1 )
-                this.$store.commit('setVariableModificationMaximum', value);
-            else
-                this.$store.commit('setVariableModificationMaximum', 0);
-        },
         validateNewModification(){
             return this.new_modification.amino_acid != null
                 && this.new_modification.position != null
@@ -46,8 +38,17 @@ export default {
         modifications(){
             return this.$store.state.modification_filter.modifications;
         },
-        variable_modification_maximum(){
-            return this.$store.state.modification_filter.variable_modification_maximum;
+        variable_modification_maximum: {
+            get(){
+                return this.$store.state.modification_filter.variable_modification_maximum;
+            },
+            set(value){
+                value = parseInt(value);
+                if(!Number.isNaN(value) && value > -1 )
+                    this.$store.commit('setVariableModificationMaximum', value);
+                else
+                    this.$store.commit('setVariableModificationMaximum', 0);
+            }
         }
     },
     template: '#modification-filter-template'

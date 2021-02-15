@@ -1,26 +1,29 @@
 export default {
     methods: {
-        setLowerTolerance(event){
-            var value = parseInt(event.target.value);
+        validateAndSetMassTolerance(commit_method, value){
+            value = parseInt(value);
             if(!Number.isNaN(value) && value > -1)
-                this.$store.commit('setLowerMassTolerance', value);
+                this.$store.commit(commit_method, value);
             else
-                this.$store.commit('setLowerMassTolerance', 0);
-        },
-        setUpperTolerance(event){
-            var value = parseInt(event.target.value);
-            if(!Number.isNaN(value) && value > -1)
-                this.$store.commit('setUpperMassTolerance', value);
-            else
-                this.$store.commit('setUpperMassTolerance', 0);
+                this.$store.commit(commit_method, 0);
         }
     },
     computed: {
-        lower_tolerance(){
-            return this.$store.state.mass_tolerance_filter.lower_tolerance;
+        lower_tolerance: {
+            get(){
+                return this.$store.state.mass_tolerance_filter.lower_tolerance;
+            },
+            set(value){
+                this.validateAndSetMassTolerance('setLowerMassTolerance', value);
+            }
         },
-        upper_tolerance(){
-            return this.$store.state.mass_tolerance_filter.upper_tolerance;
+        upper_tolerance: {
+            get(){
+                return this.$store.state.mass_tolerance_filter.upper_tolerance;
+            },
+            set(value){
+                this.validateAndSetMassTolerance('setUpperMassTolerance', value);
+            }
         }
     },
     template: '#mass-tolerance-filter-template'

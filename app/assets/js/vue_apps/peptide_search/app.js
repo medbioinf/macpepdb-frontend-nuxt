@@ -237,13 +237,7 @@ const peptide_search_app_settings = {
             if(new_page < 0) new_page = 0;
             if(new_page > this.peptide_page_count - 1) new_page = this.peptide_page_count - 1;
             this.goToPeptidePageNumber(new_page);
-        }, 400),
-        setOrderBy(event){
-            this.$store.commit('setOrderBy', event.target.value);
-        },
-        setOrderDirection(event){
-            this.$store.commit('setOrderDirection', event.target.value);
-        }
+        }, 400)
     },
     computed: {
         sequence(){
@@ -272,11 +266,21 @@ const peptide_search_app_settings = {
             }
             return pagination;
         },
-        order_by(){
-            return this.$store.state.order_by;
+        order_by: {
+            get() {
+                return this.$store.state.order_by;
+            },
+            set(value){
+                this.$store.commit('setOrderBy', value);
+            }
         },
-        order_direction(){
-            return this.$store.state.order_direction;
+        order_direction: {
+            get() {
+                return this.$store.state.order_direction;
+            },
+            set(value){
+                this.$store.commit('setOrderDirection', value);
+            }
         },
         is_reviewed: {
             get(){
