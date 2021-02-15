@@ -1,0 +1,389 @@
+{% extends "layouts/public.j2" %}
+{% block body %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+    .markdown-body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+</style>
+<style>
+    .task-list-item { list-style-type: none; } .task-list-item-checkbox { margin-left: -20px; vertical-align: middle; }
+</style>
+
+<div class="markdown-body vscode-body vscode-light">
+<h1 id="api-usage">API usage</h1>
+<h2 id="proteins">Proteins</h2>
+<h3 id="lookup-by-accession">Lookup by accession</h3>
+<h4 id="url">url</h4>
+<p><code>http://localhost/api/proteins/&lt;ACCESSION&gt;</code></p>
+<h4 id="ouput">ouput</h4>
+<pre><code class="language-json"><div>{
+    <span class="hljs-attr">&quot;protein&quot;</span>: {
+        <span class="hljs-attr">&quot;accession&quot;</span>: <span class="hljs-string">&quot;Q93079&quot;</span>,
+        <span class="hljs-attr">&quot;header&quot;</span>: <span class="hljs-string">&quot;&gt;sp|Q93079|H2B1H_HUMAN Histone H2B type 1-H OS=Homo sapiens OX=9606 GN=H2BC9 PE=1 SV=3&quot;</span>,
+        <span class="hljs-attr">&quot;id&quot;</span>: <span class="hljs-number">2063</span>,
+        <span class="hljs-attr">&quot;sequence&quot;</span>: <span class="hljs-string">&quot;MPDPAKSAPAPKKGSKKAVTKAQKKDGKKRKRSRKESYSVYVYKVLKQVHPDTGISSKAMGIMNSFVNDIFERIAGEASRLAHYNKRSTITSREIQTAVRLLLPGELAKHAVSEGTKAVTKYTSSK&quot;</span>
+    },
+    <span class="hljs-attr">&quot;url&quot;</span>: <span class="hljs-string">&quot;http://localhost/proteins/Q93079&quot;</span>
+}
+</div></code></pre>
+<p>To get the included peptides as well, add the parameter <code>include_peptides</code> with value 1, e.g.
+    <code>http://localhost/api/proteins/&lt;ACCESSION&gt;?include_peptides=1</code></p>
+<h4 id="output">output</h4>
+<pre><code class="language-json"><div>{
+    <span class="hljs-attr">&quot;protein&quot;</span>: {
+        <span class="hljs-attr">&quot;accession&quot;</span>: <span class="hljs-string">&quot;Q93079&quot;</span>,
+        <span class="hljs-attr">&quot;header&quot;</span>: <span class="hljs-string">&quot;&gt;sp|Q93079|H2B1H_HUMAN Histone H2B type 1-H OS=Homo sapiens OX=9606 GN=H2BC9 PE=1 SV=3&quot;</span>,
+        <span class="hljs-attr">&quot;id&quot;</span>: <span class="hljs-number">2063</span>,
+        <span class="hljs-attr">&quot;sequence&quot;</span>: <span class="hljs-string">&quot;MPDPAKSAPAPKKGSKKAVTKAQKKDGKKRKRSRKESYSVYVYKVLKQVHPDTGISSKAMGIMNSFVNDIFERIAGEASRLAHYNKRSTITSREIQTAVRLLLPGELAKHAVSEGTKAVTKYTSSK&quot;</span>
+    },
+    <span class="hljs-attr">&quot;url&quot;</span>: <span class="hljs-string">&quot;http://localhost/proteins/Q93079&quot;</span>,
+    <span class="hljs-attr">&quot;peptides&quot;</span>: [
+        {
+            <span class="hljs-attr">&quot;a_count&quot;</span>: <span class="hljs-number">2</span>,
+            <span class="hljs-attr">&quot;c_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;c_terminus&quot;</span>: <span class="hljs-string">&quot;K&quot;</span>,
+            <span class="hljs-attr">&quot;d_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;e_count&quot;</span>: <span class="hljs-number">2</span>,
+            <span class="hljs-attr">&quot;f_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;g_count&quot;</span>: <span class="hljs-number">2</span>,
+            <span class="hljs-attr">&quot;h_count&quot;</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-attr">&quot;id&quot;</span>: <span class="hljs-number">275088</span>,
+            <span class="hljs-attr">&quot;j_count&quot;</span>: <span class="hljs-number">4</span>,
+            <span class="hljs-attr">&quot;k_count&quot;</span>: <span class="hljs-number">2</span>,
+            <span class="hljs-attr">&quot;length&quot;</span>: <span class="hljs-number">17</span>,
+            <span class="hljs-attr">&quot;m_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;n_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;n_terminus&quot;</span>: <span class="hljs-string">&quot;J&quot;</span>,
+            <span class="hljs-attr">&quot;number_of_missed_cleavages&quot;</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-attr">&quot;o_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;p_count&quot;</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-attr">&quot;q_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;r_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;s_count&quot;</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-attr">&quot;sequence&quot;</span>: <span class="hljs-string">&quot;JJJPGEJAKHAVSEGTK&quot;</span>,
+            <span class="hljs-attr">&quot;t_count&quot;</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-attr">&quot;u_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;v_count&quot;</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-attr">&quot;w_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;weight&quot;</span>: <span class="hljs-number">1761.998831</span>,
+            <span class="hljs-attr">&quot;y_count&quot;</span>: <span class="hljs-number">0</span>
+        },
+        ...
+    ]
+  }
+}
+</div></code></pre>
+<h3 id="digest">Digest</h3>
+<h4 id="url-1">url</h4>
+<p><code>http://localhost/api/proteins/digest</code></p>
+<h4 id="method">method</h4>
+<p><code>POST</code></p>
+<h4 id="additional-headers">additional headers</h4>
+<ul>
+    <li>Content-Type: application/json</li>
+</ul>
+<h4 id="body-json">body (JSON)</h4>
+<p>keys:</p>
+<ul>
+    <li>sequence: string</li>
+    <li>maximum_number_of_missed_cleavages: unsigned int</li>
+    <li>minimum_peptide_length: unsigned int</li>
+    <li>maximum_peptide_length: unsigned int</li>
+</ul>
+<p>example:</p>
+<pre><code class="language-json"><div>{
+	<span class="hljs-attr">&quot;sequence&quot;</span>: <span class="hljs-string">&quot;MGLLGILCFLIFLGKTWGQEQTYVISAPKIFRVGASENIVIQVYGYTEAFDATISIKSYPDKKFSYSSGHVHLSSENKFQNSAILT...&quot;</span>,
+	<span class="hljs-attr">&quot;maximum_number_of_missed_cleavages&quot;</span>: <span class="hljs-number">1</span>,
+	<span class="hljs-attr">&quot;minimum_peptide_length&quot;</span>: <span class="hljs-number">6</span>,
+	<span class="hljs-attr">&quot;maximum_peptide_length&quot;</span>: <span class="hljs-number">10</span>
+}
+</div></code></pre>
+<h2 id="peptides">Peptides</h2>
+<h3 id="lookup-by-sequence">Lookup by sequence</h3>
+<h4 id="url-2">url</h4>
+<p><code>http://localhost/api/peptides/&lt;SEQUENCE&gt;</code></p>
+<h4 id="ouput-1">ouput</h4>
+<pre><code class="language-json"><div>{
+  <span class="hljs-attr">&quot;peptide&quot;</span>: {
+    <span class="hljs-attr">&quot;a_count&quot;</span>: <span class="hljs-number">1</span>,
+    <span class="hljs-attr">&quot;c_count&quot;</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">&quot;c_terminus&quot;</span>: <span class="hljs-string">&quot;R&quot;</span>,
+    <span class="hljs-attr">&quot;d_count&quot;</span>: <span class="hljs-number">1</span>,
+    <span class="hljs-attr">&quot;e_count&quot;</span>: <span class="hljs-number">1</span>,
+    <span class="hljs-attr">&quot;f_count&quot;</span>: <span class="hljs-number">2</span>,
+    <span class="hljs-attr">&quot;g_count&quot;</span>: <span class="hljs-number">1</span>,
+    <span class="hljs-attr">&quot;h_count&quot;</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">&quot;id&quot;</span>: <span class="hljs-number">275019</span>,
+    <span class="hljs-attr">&quot;j_count&quot;</span>: <span class="hljs-number">2</span>,
+    <span class="hljs-attr">&quot;k_count&quot;</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">&quot;length&quot;</span>: <span class="hljs-number">15</span>,
+    <span class="hljs-attr">&quot;m_count&quot;</span>: <span class="hljs-number">2</span>,
+    <span class="hljs-attr">&quot;n_count&quot;</span>: <span class="hljs-number">2</span>,
+    <span class="hljs-attr">&quot;n_terminus&quot;</span>: <span class="hljs-string">&quot;A&quot;</span>,
+    <span class="hljs-attr">&quot;number_of_missed_cleavages&quot;</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">&quot;o_count&quot;</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">&quot;p_count&quot;</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">&quot;q_count&quot;</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">&quot;r_count&quot;</span>: <span class="hljs-number">1</span>,
+    <span class="hljs-attr">&quot;s_count&quot;</span>: <span class="hljs-number">1</span>,
+    <span class="hljs-attr">&quot;sequence&quot;</span>: <span class="hljs-string">&quot;AMGJMNSFVNDJFER&quot;</span>,
+    <span class="hljs-attr">&quot;t_count&quot;</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">&quot;u_count&quot;</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">&quot;v_count&quot;</span>: <span class="hljs-number">1</span>,
+    <span class="hljs-attr">&quot;w_count&quot;</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">&quot;weight&quot;</span>: <span class="hljs-number">1742.811994</span>,
+    <span class="hljs-attr">&quot;y_count&quot;</span>: <span class="hljs-number">0</span>
+  },
+  <span class="hljs-attr">&quot;url&quot;</span>: <span class="hljs-string">&quot;http://localhost:3000/peptides/AMGJMNSFVNDJFER&quot;</span>
+}
+</div></code></pre>
+<p>To get the parent proteins as well, add the parameter <code>include_proteins</code> with value 1, e.g.
+    <code>http://localhost/api/peptides/&lt;SEQUENCE&gt;?include_proteins=1</code></p>
+<h4 id="output-1">output</h4>
+<pre><code class="language-json"><div>{
+    <span class="hljs-attr">&quot;peptide&quot;</span>: {
+        <span class="hljs-attr">&quot;a_count&quot;</span>: <span class="hljs-number">1</span>,
+        <span class="hljs-attr">&quot;c_count&quot;</span>: <span class="hljs-number">0</span>,
+        <span class="hljs-attr">&quot;c_terminus&quot;</span>: <span class="hljs-string">&quot;R&quot;</span>,
+        <span class="hljs-attr">&quot;d_count&quot;</span>: <span class="hljs-number">1</span>,
+        <span class="hljs-attr">&quot;e_count&quot;</span>: <span class="hljs-number">1</span>,
+        <span class="hljs-attr">&quot;f_count&quot;</span>: <span class="hljs-number">2</span>,
+        <span class="hljs-attr">&quot;g_count&quot;</span>: <span class="hljs-number">1</span>,
+        <span class="hljs-attr">&quot;h_count&quot;</span>: <span class="hljs-number">0</span>,
+        <span class="hljs-attr">&quot;id&quot;</span>: <span class="hljs-number">275019</span>,
+        <span class="hljs-attr">&quot;j_count&quot;</span>: <span class="hljs-number">2</span>,
+        <span class="hljs-attr">&quot;k_count&quot;</span>: <span class="hljs-number">0</span>,
+        <span class="hljs-attr">&quot;length&quot;</span>: <span class="hljs-number">15</span>,
+        <span class="hljs-attr">&quot;m_count&quot;</span>: <span class="hljs-number">2</span>,
+        <span class="hljs-attr">&quot;n_count&quot;</span>: <span class="hljs-number">2</span>,
+        <span class="hljs-attr">&quot;n_terminus&quot;</span>: <span class="hljs-string">&quot;A&quot;</span>,
+        <span class="hljs-attr">&quot;number_of_missed_cleavages&quot;</span>: <span class="hljs-number">0</span>,
+        <span class="hljs-attr">&quot;o_count&quot;</span>: <span class="hljs-number">0</span>,
+        <span class="hljs-attr">&quot;p_count&quot;</span>: <span class="hljs-number">0</span>,
+        <span class="hljs-attr">&quot;q_count&quot;</span>: <span class="hljs-number">0</span>,
+        <span class="hljs-attr">&quot;r_count&quot;</span>: <span class="hljs-number">1</span>,
+        <span class="hljs-attr">&quot;s_count&quot;</span>: <span class="hljs-number">1</span>,
+        <span class="hljs-attr">&quot;sequence&quot;</span>: <span class="hljs-string">&quot;AMGJMNSFVNDJFER&quot;</span>,
+        <span class="hljs-attr">&quot;t_count&quot;</span>: <span class="hljs-number">0</span>,
+        <span class="hljs-attr">&quot;u_count&quot;</span>: <span class="hljs-number">0</span>,
+        <span class="hljs-attr">&quot;v_count&quot;</span>: <span class="hljs-number">1</span>,
+        <span class="hljs-attr">&quot;w_count&quot;</span>: <span class="hljs-number">0</span>,
+        <span class="hljs-attr">&quot;weight&quot;</span>: <span class="hljs-number">1742.811994</span>,
+        <span class="hljs-attr">&quot;y_count&quot;</span>: <span class="hljs-number">0</span>
+    },
+    <span class="hljs-attr">&quot;url&quot;</span>: <span class="hljs-string">&quot;http://localhost:3000/peptides/AMGJMNSFVNDJFER&quot;</span>,
+    proteins: [
+        {
+        <span class="hljs-attr">&quot;accession&quot;</span>: <span class="hljs-string">&quot;Q93079&quot;</span>,
+        <span class="hljs-attr">&quot;header&quot;</span>: <span class="hljs-string">&quot;&gt;sp|Q93079|H2B1H_HUMAN Histone H2B type 1-H OS=Homo sapiens OX=9606 GN=H2BC9 PE=1 SV=3&quot;</span>,
+        <span class="hljs-attr">&quot;id&quot;</span>: <span class="hljs-number">2063</span>,
+        <span class="hljs-attr">&quot;sequence&quot;</span>: <span class="hljs-string">&quot;MPDPAKSAPAPKKGSKKAVTKAQKKDGKKRKRSRKESYSVYVYKVLKQVHPDTGISSKAMGIMNSFVNDIFERIAGEASRLAHYNKRSTITSREIQTAVRLLLPGELAKHAVSEGTKAVTKYTSSK&quot;</span>
+        },
+        ...
+    ]
+}
+</div></code></pre>
+<h3 id="search-by-weight">Search by weight</h3>
+<h4 id="url-3">url</h4>
+<p><code>http://localhost/api/peptides/search</code></p>
+<h4 id="method-1">method</h4>
+<p><code>POST</code></p>
+<h4 id="additional-headers-1">additional headers</h4>
+<ul>
+    <li>Content-Type: application/json</li>
+    <li>Accept: <code>application/json</code>, <code>application/octet-stream</code> or <code>text/plain</code> (This
+        controlls the output, see below. <code>application/json</code> is the default and is used for unknown
+        accept-formats)</li>
+</ul>
+<h4 id="body-json-1">body (JSON)</h4>
+<p>keys:</p>
+<ul>
+    <li>precursor: float</li>
+    <li>lower_precursor_tolerance_ppm: unsigned int</li>
+    <li>upper_precursor_tolerance_ppm: unsigned int</li>
+    <li>variable_modification_maximum: unsigned int</li>
+    <li>modifications: array of modifications, each modification is a dictionary with keys
+        <ul>
+            <li>amino_acid: string containing the amino acid one letter code</li>
+            <li>position: string (anywhere|n_terminus|c_terminus)</li>
+            <li>is_static: bool, marks modification as static or variable</li>
+            <li>delta: float, the mass change which is applied by this modification</li>
+        </ul>
+    </li>
+    <li>limit: unsigned int (optional)</li>
+    <li>offset: unsigned int (optional)</li>
+    <li>taxonomy_id: unsigned int (Uniprot Taxonomy Identifier)</li>
+    <li>proteome_id: string (Uniprot Proteome Identifier: UP...)</li>
+    <li>is_reviewed: bool, default: not set, optional (selects from which database the peptides will be from, not set:
+        Swiss-Prot + TrEMBL, true: SwissProt, false: TrEMBL)</li>
+    <li>include_count: bool, default: false, optional (includes the peptides count without limit or offset. setting this
+        to false cut the response time by 50%, only accounted for <code>application/json</code>-output)</li>
+    <li>order_by: string, default: weight, possible values: <code>weight</code> <code>length</code>
+        <code>number_of_missed_cleavages</code> <code>sequence</code>, default: <code>weight</code>, optional (ignored
+        for <code>text/plain</code>-output)</li>
+    <li>order_descendent: bool, default: false, optional</li>
+</ul>
+<p>If <code>taxonomy_id</code>, <code>proteome_id</code>, <code>is_reviewed</code> are used together they will concanted
+    with <code>and</code>.</p>
+<p>example:</p>
+<pre><code class="language-json"><div>{
+	<span class="hljs-attr">&quot;precursor&quot;</span>: <span class="hljs-number">859.49506802369</span>,
+	<span class="hljs-attr">&quot;lower_precursor_tolerance_ppm&quot;</span>: <span class="hljs-number">5</span>,
+	<span class="hljs-attr">&quot;upper_precursor_tolerance_ppm&quot;</span>: <span class="hljs-number">5</span>,
+	<span class="hljs-attr">&quot;variable_modification_maximum&quot;</span>: <span class="hljs-number">0</span>,
+	<span class="hljs-attr">&quot;modifications&quot;</span>: [
+		{
+			<span class="hljs-attr">&quot;amino_acid&quot;</span>: <span class="hljs-string">&quot;C&quot;</span>,
+			<span class="hljs-attr">&quot;position&quot;</span>: <span class="hljs-string">&quot;anywhere&quot;</span>,
+			<span class="hljs-attr">&quot;is_static&quot;</span>: <span class="hljs-literal">true</span>,
+			<span class="hljs-attr">&quot;delta&quot;</span>: <span class="hljs-number">57.021464</span>
+		},
+		...
+	],
+    <span class="hljs-attr">&quot;limit&quot;</span>: <span class="hljs-number">10</span>,
+    <span class="hljs-attr">&quot;offset&quot;</span>: <span class="hljs-number">10</span>,
+    <span class="hljs-attr">&quot;taxonomy_id&quot;</span>: <span class="hljs-number">7955</span>,
+    <span class="hljs-attr">&quot;proteome_id&quot;</span>: <span class="hljs-string">&quot;UP000000437&quot;</span>,
+    <span class="hljs-attr">&quot;is_reviewed&quot;</span>: <span class="hljs-number">1</span>
+}
+</div></code></pre>
+<h4 id="output-applicationjson">output (application/json)</h4>
+<pre><code class="language-json"><div>{
+    <span class="hljs-attr">&quot;count&quot;</span>: <span class="hljs-number">77</span>,
+    <span class="hljs-attr">&quot;peptides&quot;</span>: [
+        {
+            <span class="hljs-attr">&quot;a_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;c_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;c_terminus&quot;</span>: <span class="hljs-string">&quot;K&quot;</span>,
+            <span class="hljs-attr">&quot;d_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;e_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;f_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;g_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;h_count&quot;</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-attr">&quot;id&quot;</span>: <span class="hljs-number">7740</span>,
+            <span class="hljs-attr">&quot;j_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;k_count&quot;</span>: <span class="hljs-number">2</span>,
+            <span class="hljs-attr">&quot;length&quot;</span>: <span class="hljs-number">7</span>,
+            <span class="hljs-attr">&quot;m_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;n_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;n_terminus&quot;</span>: <span class="hljs-string">&quot;Y&quot;</span>,
+            <span class="hljs-attr">&quot;number_of_missed_cleavages&quot;</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-attr">&quot;o_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;p_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;q_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;r_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;s_count&quot;</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-attr">&quot;sequence&quot;</span>: <span class="hljs-string">&quot;YKHSVVK&quot;</span>,
+            <span class="hljs-attr">&quot;t_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;u_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;v_count&quot;</span>: <span class="hljs-number">2</span>,
+            <span class="hljs-attr">&quot;w_count&quot;</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-attr">&quot;weight&quot;</span>: <span class="hljs-number">859.491573</span>,
+            <span class="hljs-attr">&quot;y_count&quot;</span>: <span class="hljs-number">1</span>
+        },
+        ...
+    ]
+}
+</div></code></pre>
+<h4 id="output-applicationoctet-stream">output (application/octet-stream)</h4>
+<p>Bytestream which contains one peptide in JSON-format per line.</p>
+<pre><code><code><div>{&quot;sequence&quot;:&quot;JJAMVWK&quot;,&quot;length&quot;:7,&quot;number_of_missed_cleavages&quot;:0,&quot;weight&quot;:859.498981153,&quot;a_count&quot;:1,&quot;c_count&quot;:0,&quot;d_count&quot;:0,&quot;e_count&quot;:0,&quot;f_count&quot;:0,&quot;g_count&quot;:0,&quot;h_count&quot;:0,&quot;j_count&quot;:2,&quot;k_count&quot;:1,&quot;m_count&quot;:1,&quot;n_count&quot;:0,&quot;o_count&quot;:0,&quot;p_count&quot;:0,&quot;q_count&quot;:0,&quot;r_count&quot;:0,&quot;s_count&quot;:0,&quot;t_count&quot;:0,&quot;u_count&quot;:0,&quot;v_count&quot;:1,&quot;w_count&quot;:1,&quot;y_count&quot;:0,&quot;n_terminus&quot;:&quot;J&quot;,&quot;c_terminus&quot;:&quot;K&quot;,&quot;id&quot;:1504140498,&quot;peff_notation_of_modifications&quot;:&quot;&quot;}
+{&quot;sequence&quot;:&quot;WMAJJKV&quot;,&quot;length&quot;:7,&quot;number_of_missed_cleavages&quot;:1,&quot;weight&quot;:859.498981153,&quot;a_count&quot;:1,&quot;c_count&quot;:0,&quot;d_count&quot;:0,&quot;e_count&quot;:0,&quot;f_count&quot;:0,&quot;g_count&quot;:0,&quot;h_count&quot;:0,&quot;j_count&quot;:2,&quot;k_count&quot;:1,&quot;m_count&quot;:1,&quot;n_count&quot;:0,&quot;o_count&quot;:0,&quot;p_count&quot;:0,&quot;q_count&quot;:0,&quot;r_count&quot;:0,&quot;s_count&quot;:0,&quot;t_count&quot;:0,&quot;u_count&quot;:0,&quot;v_count&quot;:1,&quot;w_count&quot;:1,&quot;y_count&quot;:0,&quot;n_terminus&quot;:&quot;W&quot;,&quot;c_terminus&quot;:&quot;V&quot;,&quot;id&quot;:273131111,&quot;peff_notation_of_modifications&quot;:&quot;&quot;}
+{&quot;sequence&quot;:&quot;MVJAJWK&quot;,&quot;length&quot;:7,&quot;number_of_missed_cleavages&quot;:0,&quot;weight&quot;:859.498981153,&quot;a_count&quot;:1,&quot;c_count&quot;:0,&quot;d_count&quot;:0,&quot;e_count&quot;:0,&quot;f_count&quot;:0,&quot;g_count&quot;:0,&quot;h_count&quot;:0,&quot;j_count&quot;:2,&quot;k_count&quot;:1,&quot;m_count&quot;:1,&quot;n_count&quot;:0,&quot;o_count&quot;:0,&quot;p_count&quot;:0,&quot;q_count&quot;:0,&quot;r_count&quot;:0,&quot;s_count&quot;:0,&quot;t_count&quot;:0,&quot;u_count&quot;:0,&quot;v_count&quot;:1,&quot;w_count&quot;:1,&quot;y_count&quot;:0,&quot;n_terminus&quot;:&quot;M&quot;,&quot;c_terminus&quot;:&quot;K&quot;,&quot;id&quot;:137426664,&quot;peff_notation_of_modifications&quot;:&quot;&quot;}
+{&quot;sequence&quot;:&quot;AJWJVMK&quot;,&quot;length&quot;:7,&quot;number_of_missed_cleavages&quot;:0,&quot;weight&quot;:859498981153,&quot;a_count&quot;:1,&quot;c_count&quot;:0,&quot;d_count&quot;:0,&quot;e_count&quot;:0,&quot;f_count&quot;:0,&quot;g_count&quot;:0,&quot;h_count&quot;:0,&quot;j_count&quot;:2,&quot;k_count&quot;:1,&quot;m_count&quot;:1,&quot;n_count&quot;:0,&quot;o_count&quot;:0,&quot;p_count&quot;:0,&quot;q_count&quot;:0,&quot;r_count&quot;:0,&quot;s_count&quot;:0,&quot;t_count&quot;:0,&quot;u_count&quot;:0,&quot;v_count&quot;:1,&quot;w_count&quot;:1,&quot;y_count&quot;:0,&quot;n_terminus&quot;:&quot;A&quot;,&quot;c_terminus&quot;:&quot;K&quot;,&quot;id&quot;:3831436491,&quot;peff_notation_of_modifications&quot;:&quot;&quot;}
+</div></code></code></pre>
+<h4 id="output-textplain">output (text/plain))</h4>
+<p>Text stream in fasta format.</p>
+<pre><code><code><div>&gt;lcl|PEPTIDE_&lt;ID&gt;
+JJAMVWK
+&gt;lcl|PEPTIDE_&lt;ID&gt;
+WMAJJKV
+&gt;lcl|PEPTIDE_&lt;ID&gt;
+MVJAJWK
+&gt;lcl|PEPTIDE_&lt;ID&gt;
+AJWJVMK
+</div></code></code></pre>
+<h3 id="calculate-theoretical-mass">Calculate theoretical mass</h3>
+<h4 id="url-4">url</h4>
+<p><code>http://localhost/api/peptides/weight/&lt;SEQUENCE&gt;</code></p>
+<h4 id="additional-headers-2">additional headers</h4>
+<ul>
+    <li>Content-Type: application/json</li>
+</ul>
+<h4 id="example">example</h4>
+<p><code>http://localhost/api/peptides/weight/VQDDTK</code></p>
+<h4 id="output-2">output</h4>
+<pre><code class="language-json"><div>{
+    <span class="hljs-attr">&quot;weight&quot;</span>: <span class="hljs-number">704.334083868</span>
+}
+</div></code></pre>
+<h2 id="taxonomies">Taxonomies</h2>
+<h3 id="search">Search</h3>
+<h4 id="url-5">url</h4>
+<p><code>http://localhost/api/taxonomies/search</code></p>
+<h4 id="method-2">method</h4>
+<p><code>POST</code></p>
+<h4 id="additional-headers-3">additional headers</h4>
+<ul>
+    <li>Content-Type: application/json</li>
+</ul>
+<h4 id="body-json-2">body (JSON)</h4>
+<p>keys:</p>
+<ul>
+    <li>query: int|string (If this is an integer, the API searches for an exact ID. If this is a string, the API search
+        for a scientific name. You can use '*' as wildcard.)</li>
+</ul>
+<p>example:</p>
+<pre><code class="language-json"><div>{
+    <span class="hljs-attr">&quot;query&quot;</span>: <span class="hljs-number">71399</span>
+}
+</div></code></pre>
+<p>or</p>
+<pre><code class="language-json"><div>{
+    <span class="hljs-attr">&quot;query&quot;</span>: <span class="hljs-string">&quot;*laviciniaceae&quot;</span>
+}
+</div></code></pre>
+<h4 id="output-3">output</h4>
+<p>Both examples will lead to</p>
+<pre><code class="language-json"><div>[
+  {
+    <span class="hljs-attr">&quot;id&quot;</span>: <span class="hljs-number">71399</span>,
+    <span class="hljs-attr">&quot;name&quot;</span>: <span class="hljs-string">&quot;Pallaviciniaceae&quot;</span>
+  }
+]
+</div></code></pre>
+<h4 id="note">note</h4>
+<p>If the given ID was merged with another one, only the new ID will reported. For example a search for ID
+    <code>56884</code> would result in the same output, because it was merged with <code>71399</code>.</p>
+<h3 id="lookup-by-id">Lookup by ID</h3>
+<h4 id="url-6">url</h4>
+<p><code>http://localhost/api/taxonomies/&lt;ID&gt;</code></p>
+<h4 id="example-1">example</h4>
+<p><code>http://localhost/api/taxonomies/56884</code></p>
+<h4 id="output-4">output</h4>
+<pre><code class="language-json"><div>{
+  <span class="hljs-attr">&quot;children&quot;</span>: [
+    <span class="hljs-number">37401</span>,
+    <span class="hljs-number">56938</span>,
+    <span class="hljs-number">242118</span>,
+    <span class="hljs-number">242111</span>,
+    <span class="hljs-number">269534</span>,
+    <span class="hljs-number">269532</span>,
+    <span class="hljs-number">304441</span>,
+    <span class="hljs-number">984492</span>
+  ],
+  <span class="hljs-attr">&quot;id&quot;</span>: <span class="hljs-number">71399</span>,
+  <span class="hljs-attr">&quot;name&quot;</span>: <span class="hljs-string">&quot;Pallaviciniaceae&quot;</span>,
+  <span class="hljs-attr">&quot;parent&quot;</span>: <span class="hljs-number">186795</span>
+}
+</div></code></pre>
+<h4 id="note-1">note</h4>
+<p>If the given ID was merged with another one, the resulting ID will differ. The ID <code>56884</code> from the example
+    was merged with <code>71399</code>. So <code>71399</code> is reported.</p>
+
+</div>
+
+{% endblock %}
