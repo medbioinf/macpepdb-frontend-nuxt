@@ -1,5 +1,5 @@
-# TrypperDB Web
-TrypperDB is a web frontend for the database created with TrypperDB.
+# MaCPepDB Web
+MaCPepDB is a web frontend for the database created with MaCPepDB.
 
 
 ## Development
@@ -30,7 +30,7 @@ pip install -r ./requirements.txt
 # Install node requirements
 yarn install
 ```
-Create a `config.local.yaml` (see [Configuration](#Configuration)) and set a local TrypperDB for developing.
+Create a `config.local.yaml` (see [Configuration](#Configuration)) and set a local MaCPepDB for developing.
 
 ### Start the app
 ```bash
@@ -46,7 +46,7 @@ file | read order | environment | purpose
 `config.production.yaml` | 2 | production | some minor adjustments for production
 `config.local.yaml` | 4 | all | excluded from GIT, every user specific overwrite
 
-The environment is set by the environment variable `TRYPPERDB_ENV`. The default environment is `development`.
+The environment is set by the environment variable `MACPEPDB_ENV`. The default environment is `development`.
 
 You can overwrite some configuration variables and the environment with CLI arguments. For more information run `python ./run.py --help`
 
@@ -62,7 +62,7 @@ It is also recommended to use a reverse proxy like NginX to apply encryption wit
 Note: Each app start will create exactly one process to handle incoming requests. To create a high available application start the app multiple times and use NginX as reverse proxy with its build in load balancer. It is important, that all processes have access to the same upload directory and database for consistent data. Take a look into the `docker-compose.yaml` and `nginx-high-available.conf` for more information.
 
 ### Native deployment
-If you run the application on a bare metal machine, it is recommended to set up a virtual environment with all necessary dependencies. You can follow the development instruction to create one. Then run `python ./run.py --environment production` or `TRYPPERDB_ENV=production python ./run.py`
+If you run the application on a bare metal machine, it is recommended to set up a virtual environment with all necessary dependencies. You can follow the development instruction to create one. Then run `python ./run.py --environment production` or `MACPEPDB_ENV=production python ./run.py`
 
 ### Docker deployment
 First build an image of your configured application with: `docker build --tag="<YOUR_CONTAINER_TAG>" ./`   
@@ -80,10 +80,10 @@ You can use [bind mounts](https://docs.docker.com/storage/bind-mounts/) persist 
 With a bind mount it is also very easy to adjust the configuration without rebuilding the image by mounting a new `config.local.yaml` to `/usr/src/max-decoy-cloud-hq/config.local.yaml`.
 
 ### Database preparation
-First create a database, than use alembic to preapare it. Alembic does not use the same CLI as the `./run.py`-script, so you must use the `TRYPPERDB_ENV` environment variable to select the environment.
+First create a database, than use alembic to preapare it. Alembic does not use the same CLI as the `./run.py`-script, so you must use the `MACPEPDB_ENV` environment variable to select the environment.
 
 #### In native deployment
-Run `TRYPPERDB_ENV=production alembic upgrade head`.
+Run `MACPEPDB_ENV=production alembic upgrade head`.
 
 #### In docker deployment
 You can run `docker run -it --rm <YOUR_CONTAINER_TAG> alembic upgrade head` to run the migration a single time. You can automatically run the migration before app start by specify the environment variable `RUN_MIGRATION=true` during container start.

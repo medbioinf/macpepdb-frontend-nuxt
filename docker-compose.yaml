@@ -4,13 +4,13 @@ services:
     build:
       context: .
     volumes:
-      - ./config.docker-compose.yaml:/usr/src/trypperdb_web/config.development.yaml:ro
-      - ./config.local.yaml:/usr/src/trypperdb_web/config.local.yaml:ro
+      - ./config.docker-compose.yaml:/usr/src/macpepdb_web/config.development.yaml:ro
+      - ./config.local.yaml:/usr/src/macpepdb_web/config.local.yaml:ro
     #user: "${UID}:${GID}"
     environment:
       # Sets the environment for alembic, because it does not know the CLI of the HQ
-      TRYPPERDB_ENV: development
-      # This tells this container to run the database migrations. Make sure only one container runs the migration and that TRYPPERDB_ENV is set for alembic
+      MACPEPDB_ENV: development
+      # This tells this container to run the database migrations. Make sure only one container runs the migration and that MACPEPDB_ENV is set for alembic
       RUN_MIGRATIONS: "true"
     command: ["--environment", "development"]
     depends_on:
@@ -20,8 +20,8 @@ services:
     build:
       context: .
     volumes:
-      - ./config.docker-compose.yaml:/usr/src/trypperdb_web/config.development.yaml:ro
-      - ./config.local.yaml:/usr/src/trypperdb_web/config.local.yaml:ro
+      - ./config.docker-compose.yaml:/usr/src/macpepdb_web/config.development.yaml:ro
+      - ./config.local.yaml:/usr/src/macpepdb_web/config.local.yaml:ro
     #user: "${UID}:${GID}"
     command: ["--environment", "development"]
     depends_on:
@@ -31,8 +31,8 @@ services:
     build:
       context: .
     volumes:
-      - ./config.docker-compose.yaml:/usr/src/trypperdb_web/config.development.yaml:ro
-      - ./config.local.yaml:/usr/src/trypperdb_web/config.local.yaml:ro
+      - ./config.docker-compose.yaml:/usr/src/macpepdb_web/config.development.yaml:ro
+      - ./config.local.yaml:/usr/src/macpepdb_web/config.local.yaml:ro
     #user: "${UID}:${GID}"
     command: ["--environment", "development"]
     depends_on:

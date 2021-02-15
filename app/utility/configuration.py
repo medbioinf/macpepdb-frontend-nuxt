@@ -79,7 +79,7 @@ class Configuration():
 
     @staticmethod
     def _parse_cli():
-        cli_parser = argparse.ArgumentParser(description='Run TrypperDB Web')
+        cli_parser = argparse.ArgumentParser(description='Run MaCPepDB webinterface')
         cli_parser.add_argument('--environment', '-e', required=False, choices=[Environment.production.name, Environment.development.name], help='Sets the execution environment (Overrides environment variable MDCHQ_ENV).')
         cli_parser.add_argument('--interface', '-i', type=str, required=False, help='Sets on which interface the HQ is running.')
         cli_parser.add_argument('--port', '-p', type=int, required=False, default=3000, help='Sets on which port the HQ is running.')
