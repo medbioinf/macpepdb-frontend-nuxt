@@ -3,7 +3,7 @@ import requests
 import json
 import math
 
-from trypperdb.models.peptide import Peptide
+from macpepdb.models.peptide import Peptide
 
 class ApiPeptideControllerTestCase(unittest.TestCase):
     def test_peptide_limit_offset_for_octet_stream(self):

@@ -5,12 +5,12 @@ from flask import request, render_template
 from sqlalchemy import join, select, func
 from sqlalchemy.orm import sessionmaker
 
-from trypperdb.models.peptide import Peptide
-from trypperdb.models.protein import Protein
-from trypperdb.models.associacions import proteins_peptides
-from trypperdb.models.taxonomy import Taxonomy
+from macpepdb.models.peptide import Peptide
+from macpepdb.models.protein import Protein
+from macpepdb.models.associacions import proteins_peptides
+from macpepdb.models.taxonomy import Taxonomy
 
-from app import app, trypperdb
+from app import app, macpepdb
 from .application_controller import ApplicationController
 
 
@@ -21,7 +21,7 @@ class ProteinsController(ApplicationController):
     @app.route("/proteins/<string:accession>", endpoint="protein_path")
     @app.route("/proteins/<string:accession>/<int:page>", endpoint="protein_page_path")
     def show(accession, page = 1):
-        SessionClass = sessionmaker(bind = trypperdb)
+        SessionClass = sessionmaker(bind = macpepdb)
         session = SessionClass()
 
         protein = session.query(Protein).filter(Protein.accession == accession).one()

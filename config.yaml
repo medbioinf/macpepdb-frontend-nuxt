@@ -9,7 +9,7 @@ debug: false
 # Enforce https for full urls?
 use_https: false
 # Database which contains the proteins and peptides
-trypperdb:
+macpepdb:
   # Database url: 
   url: "postgresql://user:password@host:port/database"
   # Number of connections

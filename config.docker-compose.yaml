@@ -3,6 +3,6 @@ port: 3000
 secret: "development"
 debug: false
 use_https: false
-trypperdb:
+macpepdb:
   url: postgresql://postgres:developer@psql:5432/uniprot
   pool_size: 1

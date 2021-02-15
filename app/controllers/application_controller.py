@@ -5,9 +5,9 @@ from flask import render_template
 import matplotlib
 import matplotlib.pyplot as plt
 
-from trypperdb.tasks.statistics import Statistics
+from macpepdb.tasks.statistics import Statistics
 
-from app import app, trypperdb_session, config
+from app import app, macpepdb_session, config
 
 class ApplicationController:
     pass
@@ -41,8 +41,8 @@ class ApplicationController:
     @staticmethod
     @app.route("/", endpoint="root_path")
     def dashboard():
-        peptide_count, peptide_partitions_svg = ApplicationController.get_peptide_infos(trypperdb_session)
-        partition_boundaries = Statistics.get_partition_boundaries(trypperdb_session)
+        peptide_count, peptide_partitions_svg = ApplicationController.get_peptide_infos(macpepdb_session)
+        partition_boundaries = Statistics.get_partition_boundaries(macpepdb_session)
 
         return render_template(
             'application/dashboard.j2',

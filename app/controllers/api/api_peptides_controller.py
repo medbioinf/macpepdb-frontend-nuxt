@@ -2,10 +2,10 @@ import json
 
 from flask import request, jsonify, url_for
 
-from trypperdb.models.peptide import Peptide
-from trypperdb.proteomics.mass.convert import to_float as mass_to_float
+from macpepdb.models.peptide import Peptide
+from macpepdb.proteomics.mass.convert import to_float as mass_to_float
 
-from app import app, trypperdb_session
+from app import app, macpepdb_session
 from .api_abstract_peptide_controller import ApiAbstractPeptideController
 
 class ApiPeptidesController(ApiAbstractPeptideController):
@@ -26,7 +26,7 @@ class ApiPeptidesController(ApiAbstractPeptideController):
         include_proteins = request.args.get("include_proteins", type=int, default=0)
 
         try:
-            peptide = trypperdb_session.query(Peptide).filter(Peptide.sequence == sequence).one()
+            peptide = macpepdb_session.query(Peptide).filter(Peptide.sequence == sequence).one()
         except sqlalchemy_exceptions.NoResultFound as error:
             peptide = None
 

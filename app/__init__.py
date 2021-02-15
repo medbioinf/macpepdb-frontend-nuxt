@@ -5,7 +5,7 @@ from flask import Flask
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-from trypperdb.proteomics.mass.convert import to_float as mass_to_float
+from macpepdb.proteomics.mass.convert import to_float as mass_to_float
 
 from .utility.configuration import Configuration, Environment
 
@@ -39,13 +39,13 @@ def inject_global_variables():
         mass_to_float = mass_to_float
     )
 
-# Initialize connection pool for TrypperDB database
-trypperdb = create_engine(config['trypperdb']['url'], pool_size = config['trypperdb']['pool_size'], max_overflow = 0, pool_timeout=None)
-trypperdb_session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=trypperdb))
-# Remove session for trypperdb after request is done
+# Initialize connection pool for MaCPepDB database
+macpepdb = create_engine(config['macpepdb']['url'], pool_size = config['macpepdb']['pool_size'], max_overflow = 0, pool_timeout=None)
+macpepdb_session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=macpepdb))
+# Remove session for macpepdb after request is done
 @app.teardown_appcontext
 def shutdown_session(exception=None):
-    trypperdb_session.remove()
+    macpepdb_session.remove()
     # Run garbage collection to make sure unnecessary resource from session are freed up.
     gc.collect()
 

@@ -94,8 +94,8 @@ class Configuration():
             cls._validate_type(config['port'], int, 'integer', 'port')
             cls._validate_type(config['use_https'], bool, 'boolean', 'use_https')
             cls._validate_ascii_string(config['secret'], 'secret')
-            cls._validate_psql_url(config['trypperdb']['url'], 'trypperdb.url')
-            cls._validate_type(config['trypperdb']['pool_size'], int, 'integer', 'trypperdb.pool_size')
+            cls._validate_psql_url(config['macpepdb']['url'], 'macpepdb.url')
+            cls._validate_type(config['macpepdb']['pool_size'], int, 'integer', 'macpepdb.pool_size')
         except KeyError as key_error:
             raise KeyError(f"The configuration key {key_error} is missing.")
 

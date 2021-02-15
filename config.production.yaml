@@ -2,6 +2,6 @@ interface: 0.0.0.0
 port: 80
 debug: false
 use_https: true
-trypperdb:
+macpepdb:
   url: ""
   pool_size: 1

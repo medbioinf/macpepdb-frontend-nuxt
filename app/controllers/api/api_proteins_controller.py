@@ -4,12 +4,12 @@ from sqlalchemy import between, and_
 from sqlalchemy.orm import selectinload, exc as sqlalchemy_exceptions
 from flask import request, jsonify, url_for
 
-from trypperdb.proteomics.mass.convert import to_float as mass_to_float
-from trypperdb.proteomics.enzymes.digest_enzyme import DigestEnzyme
-from trypperdb.models.protein import Protein
-from trypperdb.models.peptide import Peptide
+from macpepdb.proteomics.mass.convert import to_float as mass_to_float
+from macpepdb.proteomics.enzymes.digest_enzyme import DigestEnzyme
+from macpepdb.models.protein import Protein
+from macpepdb.models.peptide import Peptide
 
-from app import app, trypperdb_session
+from app import app, macpepdb_session
 from ..application_controller import ApplicationController
 
 class ApiProteinsController(ApplicationController):
@@ -43,11 +43,11 @@ class ApiProteinsController(ApplicationController):
                 if not len(errors):
                     EnzymeClass = DigestEnzyme.get_enzyme_by_name("trypsin")
                     enzyme = EnzymeClass(data["maximum_number_of_missed_cleavages"], data["minimum_peptide_length"], data["maximum_peptide_length"])
-                    peptides = enzyme.digest(Protein('>tmp', 'trypperdb_temporary', 'TrypperDB Temporary', data["sequence"], 0, "temporary", False))
+                    peptides = enzyme.digest(Protein('>tmp', 'macpepdb_temporary', 'MaCPepDB Temporary', data["sequence"], 0, "temporary", False))
                     peptides.sort(key = lambda peptide: peptide.weight)
             elif "accession" in data:
                 try:
-                    protein = trypperdb_session.query(Protein).filter(Protein.accession == data["accession"]).one()
+                    protein = macpepdb_session.query(Protein).filter(Protein.accession == data["accession"]).one()
                 except sqlalchemy_exceptions.NoResultFound as error:
                     protein = None
 
@@ -87,7 +87,7 @@ class ApiProteinsController(ApplicationController):
         response_data = {}
 
         try:
-            protein = trypperdb_session.query(Protein).filter(Protein.accession == accession).one()
+            protein = macpepdb_session.query(Protein).filter(Protein.accession == accession).one()
         except sqlalchemy_exceptions.NoResultFound as error:
             protein = None
 

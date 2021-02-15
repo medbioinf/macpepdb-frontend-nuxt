@@ -6,18 +6,18 @@ from flask import jsonify, Response
 from sqlalchemy import func, distinct, and_, select, desc, asc
 from sqlalchemy.orm import sessionmaker, aliased
 
-from trypperdb.proteomics.mass.convert import to_int as mass_to_int, to_float as mass_to_float
-from trypperdb.proteomics.modification import Modification, ModificationPosition
-from trypperdb.proteomics.amino_acid import AminoAcid
-from trypperdb.proteomics.modification_collection import ModificationCollection
-from trypperdb.models.modified_peptide_where_clause_builder import ModifiedPeptideWhereClauseBuilder
-from trypperdb.models.protein import Protein
-from trypperdb.models.taxonomy import Taxonomy, TaxonomyRank
-from trypperdb.models.peptide import Peptide
-from trypperdb.models.associacions import proteins_peptides as proteins_peptides_table
+from macpepdb.proteomics.mass.convert import to_int as mass_to_int, to_float as mass_to_float
+from macpepdb.proteomics.modification import Modification, ModificationPosition
+from macpepdb.proteomics.amino_acid import AminoAcid
+from macpepdb.proteomics.modification_collection import ModificationCollection
+from macpepdb.models.modified_peptide_where_clause_builder import ModifiedPeptideWhereClauseBuilder
+from macpepdb.models.protein import Protein
+from macpepdb.models.taxonomy import Taxonomy, TaxonomyRank
+from macpepdb.models.peptide import Peptide
+from macpepdb.models.associacions import proteins_peptides as proteins_peptides_table
 
 
-from app import trypperdb
+from app import macpepdb, app
 from ..application_controller import ApplicationController
 
 class ApiAbstractPeptideController(ApplicationController):
@@ -122,7 +122,7 @@ class ApiAbstractPeptideController(ApplicationController):
                             sub_taxonomies = recursive_query.union_all(select(child_taxonomies.columns).where(child_taxonomies.c.parent_id == parent_taxonomies.c.id))
                             sub_species_id_query = select([sub_taxonomies.c.id]).where(sub_taxonomies.c.rank == TaxonomyRank.SPECIES)
 
-                            with trypperdb.connect() as connection:
+                            with macpepdb.connect() as connection:
                                 sub_species_ids = [row[0] for row in connection.execute(sub_species_id_query).fetchall()]
                             
                             if len(sub_species_ids) == 1:
@@ -166,7 +166,7 @@ class ApiAbstractPeptideController(ApplicationController):
                         peptides_query = peptides_query.order_by(order_direction(peptides_query.c[order_by]))
 
                     peptides_query = peptides_query.distinct()
-                    
+
                     # Note about offset and limit: It is much faster to fetch data from server and discard rows below the offset and stop the fetching when the limit is reached, instead of applying LIMIT and OFFSET directly to the query.
                     # Even on high offsets, which discards a lot of rows, this approach is faster.
                     # Curl shows the diffences: curl -o foo.json --header "Content-Type: application/json" --request POST --data '{"include_count":true,"offset":0,"limit":50,"modifications":[{"amino_acid":"C","position":"anywhere","is_static":true,"delta":57.021464}],"lower_precursor_tolerance_ppm":5,"upper_precursor_tolerance_ppm":5,"variable_modification_maximum":0,"order":true,"precursor":859.49506802369}' http://localhost:3000/api/peptides/search
@@ -206,7 +206,7 @@ class ApiAbstractPeptideController(ApplicationController):
                 @param offset Result offset
                 @param limit Result limit
                 """
-                with trypperdb.connect() as db_connection:
+                with macpepdb.connect() as db_connection:
                     # Open a JSON object
                     yield b"{"
                     # Check if there are pepritdes
@@ -276,7 +276,7 @@ class ApiAbstractPeptideController(ApplicationController):
                 @param offset Result offset
                 @param limit Result limit
                 """
-                with trypperdb.connect() as db_connection:
+                with macpepdb.connect() as db_connection:
                     # Create cursor
                     peptides_cursor = db_connection.execution_options(stream_results=True).execute(peptides_query)
                     is_first_chunk = True
@@ -336,7 +336,7 @@ class ApiAbstractPeptideController(ApplicationController):
                 @param offset Result offset
                 @param limit Result limit
                 """
-                with trypperdb.connect() as db_connection:
+                with macpepdb.connect() as db_connection:
                     # Create cursor
                     peptides_cursor = db_connection.execution_options(stream_results=True).execute(peptides_query)
                     is_first_chunk = True

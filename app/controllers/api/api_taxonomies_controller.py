@@ -3,10 +3,10 @@ import sys
 from sqlalchemy.orm import sessionmaker, selectinload, exc as sqlalchemy_exceptions
 from flask import request, jsonify, url_for
 
-from trypperdb.models.taxonomy import Taxonomy
-from trypperdb.models.taxonomy_merge import TaxonomyMerge
+from macpepdb.models.taxonomy import Taxonomy
+from macpepdb.models.taxonomy_merge import TaxonomyMerge
 
-from app import app, trypperdb_session
+from app import app, macpepdb_session
 from ..application_controller import ApplicationController
 
 class ApiTaxonomiesController(ApplicationController):
@@ -29,12 +29,12 @@ class ApiTaxonomiesController(ApplicationController):
             else: 
                 condition = Taxonomy.id == data["query"]
 
-            taxonomies = trypperdb_session.query(Taxonomy).filter(condition).all()
+            taxonomies = macpepdb_session.query(Taxonomy).filter(condition).all()
 
             if isinstance(data["query"], int) and not len(taxonomies):
-                taxonomy_merge = trypperdb_session.query(TaxonomyMerge).filter(TaxonomyMerge.source_id == data["query"]).one_or_none()
+                taxonomy_merge = macpepdb_session.query(TaxonomyMerge).filter(TaxonomyMerge.source_id == data["query"]).one_or_none()
                 if taxonomy_merge:
-                    taxonomies = trypperdb_session.query(Taxonomy).filter(Taxonomy.id == taxonomy_merge.target_id).all()
+                    taxonomies = macpepdb_session.query(Taxonomy).filter(Taxonomy.id == taxonomy_merge.target_id).all()
 
             response = []
 
@@ -50,12 +50,12 @@ class ApiTaxonomiesController(ApplicationController):
     @staticmethod
     @app.route("/api/taxonomies/<string:id>", endpoint="api_taxonomy_path")
     def show(id):
-        taxonomy = trypperdb_session.query(Taxonomy).filter(Taxonomy.id == id).one_or_none()
+        taxonomy = macpepdb_session.query(Taxonomy).filter(Taxonomy.id == id).one_or_none()
 
         if not taxonomy:
-            taxonomy_merge = trypperdb_session.query(TaxonomyMerge).filter(TaxonomyMerge.source_id == id).one_or_none()
+            taxonomy_merge = macpepdb_session.query(TaxonomyMerge).filter(TaxonomyMerge.source_id == id).one_or_none()
             if taxonomy_merge:
-                taxonomy = trypperdb_session.query(Taxonomy).filter(Taxonomy.id == taxonomy_merge.target_id).one_or_none()
+                taxonomy = macpepdb_session.query(Taxonomy).filter(Taxonomy.id == taxonomy_merge.target_id).one_or_none()
 
         response = None
         if taxonomy:
@@ -68,6 +68,6 @@ class ApiTaxonomiesController(ApplicationController):
         else:
             return jsonify(["not found"]), 422
         if taxonomy:
-            children_id_rows = trypperdb_session.query(Taxonomy.id).filter(Taxonomy.parent_id == taxonomy.id).all()
+            children_id_rows = macpepdb_session.query(Taxonomy.id).filter(Taxonomy.parent_id == taxonomy.id).all()
             response["children"] = [row[0] for row in children_id_rows]
         return jsonify(response)
