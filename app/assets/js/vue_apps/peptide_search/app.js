@@ -149,6 +149,7 @@ const peptide_search_app_settings = {
             this.searchPeptidesByWeight();
         },
         sequenceLookup: debounce(function(){
+            this.is_searching_for_peptides = true;
             this.errors = [];
             fetch(this.peptide_api_url.replace("PEPTIDE", this.sequence), {
                 cache: 'no-cache',
@@ -172,6 +173,9 @@ const peptide_search_app_settings = {
                 } else {
                     this.errors = ["something unusual has happend, please try again later"];
                 }
+            })
+            .finally(() => {
+                this.is_searching_for_peptides = false;
             });
         }, 250),
         handleSequence(){
