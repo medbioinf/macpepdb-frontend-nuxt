@@ -78,13 +78,3 @@ If you run this container with other containers like NginX, RabbitMQ or PostgreS
 
 You can use [bind mounts](https://docs.docker.com/storage/bind-mounts/) persist the uploaded files and make them available to the host.   
 With a bind mount it is also very easy to adjust the configuration without rebuilding the image by mounting a new `config.local.yaml` to `/usr/src/max-decoy-cloud-hq/config.local.yaml`.
-
-### Database preparation
-First create a database, than use alembic to preapare it. Alembic does not use the same CLI as the `./run.py`-script, so you must use the `MACPEPDB_ENV` environment variable to select the environment.
-
-#### In native deployment
-Run `MACPEPDB_ENV=production alembic upgrade head`.
-
-#### In docker deployment
-You can run `docker run -it --rm <YOUR_CONTAINER_TAG> alembic upgrade head` to run the migration a single time. You can automatically run the migration before app start by specify the environment variable `RUN_MIGRATION=true` during container start.
-`docker run -d --name="<SOME_NAME>" -p <HOST_PORT>:<YOUR_CONFIGURED_PORT> -e RUN_MIGRATION=true <YOUR_CONTAINER_TAG>`
