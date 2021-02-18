@@ -8,10 +8,14 @@
 ```json
 {
     "protein": {
-        "accession": "Q93079",
-        "header": ">sp|Q93079|H2B1H_HUMAN Histone H2B type 1-H OS=Homo sapiens OX=9606 GN=H2BC9 PE=1 SV=3",
         "id": 2063,
-        "sequence": "MPDPAKSAPAPKKGSKKAVTKAQKKDGKKRKRSRKESYSVYVYKVLKQVHPDTGISSKAMGIMNSFVNDIFERIAGEASRLAHYNKRSTITSREIQTAVRLLLPGELAKHAVSEGTKAVTKYTSSK"
+        "accession": "Q93079",
+        "entry_name": "H2B1H_HUMAN",
+        "name": "Histone H2B type 1-H",
+        "sequence": "MPDPAKSAPAPKKGSKKAVTKAQKKDGKKRKRSRKESYSVYVYKVLKQVHPDTGISSKAMGIMNSFVNDIFERIAGEASRLAHYNKRSTITSREIQTAVRLLLPGELAKHAVSEGTKAVTKYTSSK",
+        "taxonomy_id": 9606,
+        "proteome_id": "UP000005640",
+        "is_reviewed": true
     },
     "url": "http://localhost/proteins/Q93079"
 }
@@ -23,10 +27,14 @@ To get the included peptides as well, add the parameter `include_peptides` with 
 ```json
 {
     "protein": {
-        "accession": "Q93079",
-        "header": ">sp|Q93079|H2B1H_HUMAN Histone H2B type 1-H OS=Homo sapiens OX=9606 GN=H2BC9 PE=1 SV=3",
         "id": 2063,
-        "sequence": "MPDPAKSAPAPKKGSKKAVTKAQKKDGKKRKRSRKESYSVYVYKVLKQVHPDTGISSKAMGIMNSFVNDIFERIAGEASRLAHYNKRSTITSREIQTAVRLLLPGELAKHAVSEGTKAVTKYTSSK"
+        "accession": "Q93079",
+        "entry_name": "H2B1H_HUMAN",
+        "name": "Histone H2B type 1-H",
+        "sequence": "MPDPAKSAPAPKKGSKKAVTKAQKKDGKKRKRSRKESYSVYVYKVLKQVHPDTGISSKAMGIMNSFVNDIFERIAGEASRLAHYNKRSTITSREIQTAVRLLLPGELAKHAVSEGTKAVTKYTSSK",
+        "taxonomy_id": 9606,
+        "proteome_id": "UP000005640",
+        "is_reviewed": true
     },
     "url": "http://localhost/proteins/Q93079",
     "peptides": [
@@ -171,10 +179,14 @@ To get the parent proteins as well, add the parameter `include_proteins` with va
     "url": "http://localhost:3000/peptides/AMGJMNSFVNDJFER",
     proteins: [
         {
-        "accession": "Q93079",
-        "header": ">sp|Q93079|H2B1H_HUMAN Histone H2B type 1-H OS=Homo sapiens OX=9606 GN=H2BC9 PE=1 SV=3",
-        "id": 2063,
-        "sequence": "MPDPAKSAPAPKKGSKKAVTKAQKKDGKKRKRSRKESYSVYVYKVLKQVHPDTGISSKAMGIMNSFVNDIFERIAGEASRLAHYNKRSTITSREIQTAVRLLLPGELAKHAVSEGTKAVTKYTSSK"
+            "id": 2063,
+            "accession": "Q93079",
+            "entry_name": "H2B1H_HUMAN",
+            "name": "Histone H2B type 1-H",
+            "sequence": "MPDPAKSAPAPKKGSKKAVTKAQKKDGKKRKRSRKESYSVYVYKVLKQVHPDTGISSKAMGIMNSFVNDIFERIAGEASRLAHYNKRSTITSREIQTAVRLLLPGELAKHAVSEGTKAVTKYTSSK",
+            "taxonomy_id": 9606,
+            "proteome_id": "UP000005640",
+            "is_reviewed": true
         },
         ...
     ]
