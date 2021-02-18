@@ -244,7 +244,7 @@
         data-peptide-url="{{ url_for("peptide_path", sequence = "SEQUENCE") }}"
         data-peptide-api-url="{{ url_for("api_peptide_path", sequence = "PEPTIDE") }}"
         data-peptides-per-page="{{ peptides_per_page }}"
-        data-peptide-weight-api-url="{{ url_for("api_peptide_weight_path", sequence = "SEQUENCE") }}"
+        data-peptide-weight-api-url="{{ url_for("api_peptide_mass_path", sequence = "SEQUENCE") }}"
     >
         <div v-if="is_searching_for_peptides" class="search-peptides-overlay position-absolute w-100 h-100 d-flex justify-content-center align-items-center overflow-hidden">
             <div class="bg-blur"></div>
@@ -311,7 +311,7 @@
                     <label for="order-by" class="col-sm-2 col-form-label">Order by</label>
                     <div class="col-sm-10 d-flex align-items-center">
                         <select id="order-by" class="form-select" v-model="order_by">
-                            <option value="weight">Mass</option>
+                            <option value="mass">Mass</option>
                             <option value="length">Length</option>
                             <option value="sequence">Sequence</option>
                             <option value="number_of_missed_cleavages">Missed cleavages</option>
@@ -382,7 +382,7 @@
                                 <a target="_blank" :href="getPeptideUrl(peptide)">[[ peptide.sequence ]]</a>
                             </td>
                             <td>
-                                [[ peptide.weight ]]
+                                [[ peptide.mass ]]
                             </td>
                         </tr>
                     </tbody>

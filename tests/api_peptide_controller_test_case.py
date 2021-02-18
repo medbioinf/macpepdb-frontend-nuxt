@@ -23,7 +23,7 @@ class ApiPeptideControllerTestCase(unittest.TestCase):
             "upper_precursor_tolerance_ppm": 5,
             "variable_modification_maximum": 0,
             "precursor": 859.49506802369,
-            "order_by": "weight",
+            "order_by": "mass",
             "order_direction": "asc"
         }
 
@@ -82,7 +82,7 @@ class ApiPeptideControllerTestCase(unittest.TestCase):
             "upper_precursor_tolerance_ppm": 5,
             "variable_modification_maximum": 0,
             "precursor": 859.49506802369,
-            "order_by": "weight",
+            "order_by": "mass",
             "order_direction": "asc"
         }
 
@@ -138,7 +138,7 @@ class ApiPeptideControllerTestCase(unittest.TestCase):
             "upper_precursor_tolerance_ppm": 5,
             "variable_modification_maximum": 0,
             "precursor": 859.49506802369,
-            "order_by": "weight",
+            "order_by": "mass",
             "order_direction": "asc"
         }
 
@@ -197,7 +197,7 @@ class ApiPeptideControllerTestCase(unittest.TestCase):
             "upper_precursor_tolerance_ppm": 5,
             "variable_modification_maximum": 0,
             "precursor": 859.49506802369,
-            "order_by": "weight",
+            "order_by": "mass",
             "order_direction": "asc"
         }
 
@@ -215,7 +215,7 @@ class ApiPeptideControllerTestCase(unittest.TestCase):
             "upper_precursor_tolerance_ppm": 5,
             "variable_modification_maximum": 0,
             "precursor": 859.49506802369,
-            "order_by": "weight",
+            "order_by": "mass",
             "order_direction": "asc"
         }
 
@@ -227,7 +227,7 @@ class ApiPeptideControllerTestCase(unittest.TestCase):
             "upper_precursor_tolerance_ppm": 5,
             "variable_modification_maximum": 0,
             "precursor": 859.49506802369,
-            "order_by": "weight",
+            "order_by": "mass",
             "order_direction": "asc"
         }
 
@@ -246,7 +246,7 @@ class ApiPeptideControllerTestCase(unittest.TestCase):
             "upper_precursor_tolerance_ppm": 5,
             "variable_modification_maximum": 0,
             "precursor": 859.49506802369,
-            "order_by": "weight",
+            "order_by": "mass",
             "order_direction": "asc"
         }
 

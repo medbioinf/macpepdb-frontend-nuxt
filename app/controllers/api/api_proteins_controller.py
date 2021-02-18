@@ -100,7 +100,7 @@ class ApiProteinsController(ApplicationController):
                 peptide_dicts = []
                 for peptide in peptides:
                     peptide_dict = peptide.to_dict()
-                    peptide_dict["weight"] = mass_to_float(peptide_dict["weight"])
+                    peptide_dict["mass"] = mass_to_float(peptide_dict.pop("weight"))
                     peptide_dicts.append(peptide_dict)
                 response_data["peptides"] = peptide_dicts
         else:            

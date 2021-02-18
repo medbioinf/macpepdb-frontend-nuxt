@@ -22,7 +22,7 @@ from ..application_controller import ApplicationController
 
 class ApiAbstractPeptideController(ApplicationController):
     SUPPORTED_OUTPUTS = ['application/json', 'application/octet-stream', 'text/plain']
-    SUPPORTED_ORDER_COLUMNS = ['weight', 'length', 'sequence', 'number_of_missed_cleavages']
+    SUPPORTED_ORDER_COLUMNS = ['mass', 'length', 'sequence', 'number_of_missed_cleavages']
     SUPPORTED_ORDER_DIRECTIONS = ['asc', 'desc']
     FASTA_SEQUENCE_LEN = 60
 
@@ -39,7 +39,10 @@ class ApiAbstractPeptideController(ApplicationController):
         order_direction = asc
         if 'order_by' in data:
             if isinstance(data['order_by'], str) and data['order_by'] in ApiAbstractPeptideController.SUPPORTED_ORDER_COLUMNS:
-                order_by = data['order_by']
+                if data['order_by'] == 'mass':
+                    order_by = 'weight'
+                else:
+                    order_by = data['order_by']
             else:
                 errors.append(f"'order_by' must be a string with one of following values: {', '.join(ApiAbstractPeptideController.SUPPORTED_ORDER_COLUMNS)}")
         
@@ -148,13 +151,13 @@ class ApiAbstractPeptideController(ApplicationController):
                         # Concatenate conditions with and
                         protein_where_clause = and_(*protein_conditions)
                         # Rebuild count query
-                        inner_count_query = select([Peptide.id]).where(where_clause).select_from(Peptide.__table__).alias('weight_specific_peptides')
+                        inner_count_query = select([Peptide.id]).where(where_clause).select_from(Peptide.__table__).alias('mass_specific_peptides')
                         protein_join = inner_count_query.join(proteins_peptides_table, proteins_peptides_table.c.peptide_id == inner_count_query.c.id)
                         protein_join = protein_join.join(Protein.__table__, Protein.id == proteins_peptides_table.c.protein_id)
                         count_query = select([func.count(distinct(inner_count_query.c.id))]).select_from(protein_join).where(protein_where_clause)
 
                         # Create alais for the inner query
-                        inner_peptide_query = peptides_query.alias('weight_specific_peptides')
+                        inner_peptide_query = peptides_query.alias('mass_specific_peptides')
                         # Join innder query with proteins
                         protein_join = inner_peptide_query.join(proteins_peptides_table, proteins_peptides_table.c.peptide_id == inner_peptide_query.c.id)
                         protein_join = protein_join.join(Protein.__table__, Protein.id == proteins_peptides_table.c.protein_id)
@@ -241,7 +244,7 @@ class ApiAbstractPeptideController(ApplicationController):
                             if peptide_counter > offset:
                                 # Write the previous peptide to stream ...
                                 peptide_dict = {str(key): value for key, value in previous_peptide_row.items()}
-                                peptide_dict["weight"] = mass_to_float(peptide_dict["weight"])
+                                peptide_dict["mass"] = mass_to_float(peptide_dict.pop("weight"))
                                 peptide_dict['peff_notation_of_modifications'] = ''
                                 yield orjson.dumps(peptide_dict)
                                 # ... and append 
@@ -258,7 +261,7 @@ class ApiAbstractPeptideController(ApplicationController):
                         if peptide_counter > offset:
                             # Now write the last peptide without a ',' at the end
                             peptide_dict = {str(key): value for key, value in previous_peptide_row.items()}
-                            peptide_dict["weight"] = mass_to_float(peptide_dict["weight"])
+                            peptide_dict["mass"] = mass_to_float(peptide_dict.pop("weight"))
                             peptide_dict['peff_notation_of_modifications'] = ''
                             yield orjson.dumps(peptide_dict)
                             # Increase written peptides
@@ -303,7 +306,7 @@ class ApiAbstractPeptideController(ApplicationController):
                             if peptide_counter > offset:
                                 # Write the previous peptide to stream ...
                                 peptide_dict = {str(key): value for key, value in previous_peptide_row.items()}
-                                peptide_dict["weight"] = mass_to_float(peptide_dict["weight"])
+                                peptide_dict["mass"] = mass_to_float(peptide_dict.pop("weight"))
                                 peptide_dict['peff_notation_of_modifications'] = ''
                                 yield orjson.dumps(peptide_dict)
                                 # ... and append 
@@ -320,7 +323,7 @@ class ApiAbstractPeptideController(ApplicationController):
                         # Now write the last peptide without a '\n' at the end
                         if peptide_counter > offset:
                             peptide_dict = {str(key): value for key, value in previous_peptide_row.items()}
-                            peptide_dict["weight"] = mass_to_float(peptide_dict["weight"])
+                            peptide_dict["mass"] = mass_to_float(peptide_dict.pop("weight"))
                             peptide_dict['peff_notation_of_modifications'] = ''
                             yield orjson.dumps(peptide_dict)
                             # Increase written peptides

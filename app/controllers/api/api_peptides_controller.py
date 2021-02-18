@@ -32,7 +32,7 @@ class ApiPeptidesController(ApiAbstractPeptideController):
 
         if peptide:
             response_data["peptide"] = peptide.to_dict()
-            response_data["peptide"]["weight"] = mass_to_float(response_data["peptide"]["weight"])
+            response_data["peptide"]["mass"] = mass_to_float(response_data["peptide"].pop("weight"))
             response_data["url"] = url_for("peptide_path", sequence=peptide.sequence, _external=True)
 
             if include_proteins:
@@ -51,11 +51,11 @@ class ApiPeptidesController(ApiAbstractPeptideController):
             }), 422
 
     @staticmethod
-    @app.route("/api/peptides/weight/<string:sequence>", endpoint="api_peptide_weight_path", methods=["GET"])
-    def sequence_weight(sequence):
+    @app.route("/api/peptides/mass/<string:sequence>", endpoint="api_peptide_mass_path", methods=["GET"])
+    def sequence_mass(sequence):
         sequence = Peptide.generalize(sequence.upper())
         peptide = Peptide(sequence, 0)
 
         return jsonify({
-            'weight': mass_to_float(peptide.weight)
+            'mass': mass_to_float(peptide.weight)
         })

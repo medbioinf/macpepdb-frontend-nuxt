@@ -65,7 +65,7 @@ To get the included peptides as well, add the parameter `include_peptides` with 
             "u_count": 0,
             "v_count": 1,
             "w_count": 0,
-            "weight": 1761.998831,
+            "mass": 1761.998831,
             "y_count": 0
         },
         ...
@@ -134,7 +134,7 @@ example:
     "u_count": 0,
     "v_count": 1,
     "w_count": 0,
-    "weight": 1742.811994,
+    "mass": 1742.811994,
     "y_count": 0
   },
   "url": "http://localhost:3000/peptides/AMGJMNSFVNDJFER"
@@ -173,7 +173,7 @@ To get the parent proteins as well, add the parameter `include_proteins` with va
         "u_count": 0,
         "v_count": 1,
         "w_count": 0,
-        "weight": 1742.811994,
+        "mass": 1742.811994,
         "y_count": 0
     },
     "url": "http://localhost:3000/peptides/AMGJMNSFVNDJFER",
@@ -193,7 +193,7 @@ To get the parent proteins as well, add the parameter `include_proteins` with va
 }
 ```
 
-### Search by weight
+### Search by mass
 #### url
 `http://localhost/api/peptides/search`    
 #### method
@@ -219,7 +219,7 @@ keys:
 * proteome_id: string (Uniprot Proteome Identifier: UP...)
 * is_reviewed: bool, default: not set, optional (selects from which database the peptides will be from, not set: Swiss-Prot + TrEMBL, true: SwissProt, false: TrEMBL)
 * include_count: bool, default: false, optional (includes the peptides count without limit or offset. setting this to false cut the response time by 50%, only accounted for `application/json`-output)
-* order_by: string, default: weight, possible values: `weight` `length` `number_of_missed_cleavages` `sequence`, default: `weight`, optional (ignored for `text/plain`-output)
+* order_by: string, default: mass, possible values: `mass` `length` `number_of_missed_cleavages` `sequence`, default: `mass`, optional (ignored for `text/plain`-output)
 * order_descendent: bool, default: false, optional
 
 If `taxonomy_id`, `proteome_id`, `is_reviewed` are used together they will concanted with `and`.
@@ -280,7 +280,7 @@ example:
             "u_count": 0,
             "v_count": 2,
             "w_count": 0,
-            "weight": 859.491573,
+            "mass": 859.491573,
             "y_count": 1
         },
         ...
@@ -290,10 +290,10 @@ example:
 #### output (application/octet-stream)
 Bytestream which contains one peptide in JSON-format per line.
 ```
-{"sequence":"JJAMVWK","length":7,"number_of_missed_cleavages":0,"weight":859.498981153,"a_count":1,"c_count":0,"d_count":0,"e_count":0,"f_count":0,"g_count":0,"h_count":0,"j_count":2,"k_count":1,"m_count":1,"n_count":0,"o_count":0,"p_count":0,"q_count":0,"r_count":0,"s_count":0,"t_count":0,"u_count":0,"v_count":1,"w_count":1,"y_count":0,"n_terminus":"J","c_terminus":"K","id":1504140498,"peff_notation_of_modifications":""}
-{"sequence":"WMAJJKV","length":7,"number_of_missed_cleavages":1,"weight":859.498981153,"a_count":1,"c_count":0,"d_count":0,"e_count":0,"f_count":0,"g_count":0,"h_count":0,"j_count":2,"k_count":1,"m_count":1,"n_count":0,"o_count":0,"p_count":0,"q_count":0,"r_count":0,"s_count":0,"t_count":0,"u_count":0,"v_count":1,"w_count":1,"y_count":0,"n_terminus":"W","c_terminus":"V","id":273131111,"peff_notation_of_modifications":""}
-{"sequence":"MVJAJWK","length":7,"number_of_missed_cleavages":0,"weight":859.498981153,"a_count":1,"c_count":0,"d_count":0,"e_count":0,"f_count":0,"g_count":0,"h_count":0,"j_count":2,"k_count":1,"m_count":1,"n_count":0,"o_count":0,"p_count":0,"q_count":0,"r_count":0,"s_count":0,"t_count":0,"u_count":0,"v_count":1,"w_count":1,"y_count":0,"n_terminus":"M","c_terminus":"K","id":137426664,"peff_notation_of_modifications":""}
-{"sequence":"AJWJVMK","length":7,"number_of_missed_cleavages":0,"weight":859498981153,"a_count":1,"c_count":0,"d_count":0,"e_count":0,"f_count":0,"g_count":0,"h_count":0,"j_count":2,"k_count":1,"m_count":1,"n_count":0,"o_count":0,"p_count":0,"q_count":0,"r_count":0,"s_count":0,"t_count":0,"u_count":0,"v_count":1,"w_count":1,"y_count":0,"n_terminus":"A","c_terminus":"K","id":3831436491,"peff_notation_of_modifications":""}
+{"sequence":"JJAMVWK","length":7,"number_of_missed_cleavages":0,"mass":859.498981153,"a_count":1,"c_count":0,"d_count":0,"e_count":0,"f_count":0,"g_count":0,"h_count":0,"j_count":2,"k_count":1,"m_count":1,"n_count":0,"o_count":0,"p_count":0,"q_count":0,"r_count":0,"s_count":0,"t_count":0,"u_count":0,"v_count":1,"w_count":1,"y_count":0,"n_terminus":"J","c_terminus":"K","id":1504140498,"peff_notation_of_modifications":""}
+{"sequence":"WMAJJKV","length":7,"number_of_missed_cleavages":1,"mass":859.498981153,"a_count":1,"c_count":0,"d_count":0,"e_count":0,"f_count":0,"g_count":0,"h_count":0,"j_count":2,"k_count":1,"m_count":1,"n_count":0,"o_count":0,"p_count":0,"q_count":0,"r_count":0,"s_count":0,"t_count":0,"u_count":0,"v_count":1,"w_count":1,"y_count":0,"n_terminus":"W","c_terminus":"V","id":273131111,"peff_notation_of_modifications":""}
+{"sequence":"MVJAJWK","length":7,"number_of_missed_cleavages":0,"mass":859.498981153,"a_count":1,"c_count":0,"d_count":0,"e_count":0,"f_count":0,"g_count":0,"h_count":0,"j_count":2,"k_count":1,"m_count":1,"n_count":0,"o_count":0,"p_count":0,"q_count":0,"r_count":0,"s_count":0,"t_count":0,"u_count":0,"v_count":1,"w_count":1,"y_count":0,"n_terminus":"M","c_terminus":"K","id":137426664,"peff_notation_of_modifications":""}
+{"sequence":"AJWJVMK","length":7,"number_of_missed_cleavages":0,"mass":859498981153,"a_count":1,"c_count":0,"d_count":0,"e_count":0,"f_count":0,"g_count":0,"h_count":0,"j_count":2,"k_count":1,"m_count":1,"n_count":0,"o_count":0,"p_count":0,"q_count":0,"r_count":0,"s_count":0,"t_count":0,"u_count":0,"v_count":1,"w_count":1,"y_count":0,"n_terminus":"A","c_terminus":"K","id":3831436491,"peff_notation_of_modifications":""}
 ```
 #### output (text/plain))
 Text stream in fasta format.
@@ -310,15 +310,15 @@ AJWJVMK
 
 ### Calculate theoretical mass
 #### url
-`http://localhost/api/peptides/weight/<SEQUENCE>`
+`http://localhost/api/peptides/mass/<SEQUENCE>`
 #### additional headers
 * Content-Type: application/json
 #### example
-`http://localhost/api/peptides/weight/VQDDTK`
+`http://localhost/api/peptides/mass/VQDDTK`
 #### output
 ```json
 {
-    "weight": 704.334083868
+    "mass": 704.334083868
 }
 ```
 

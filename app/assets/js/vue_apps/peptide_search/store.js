@@ -23,7 +23,7 @@ export default new Vuex.Store({
             lower_tolerance: 0,
             upper_tolerance: 0
         },
-        order_by: 'weight',
+        order_by: 'mass',
         order_direction: 'asc',
         is_reviewed: null
     },
