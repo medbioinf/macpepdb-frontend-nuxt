@@ -14,6 +14,62 @@
         </div>
         <div class="row mb-3">
             <div class="col col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        Database status
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Paramter</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th>Maintenance mode</th>
+                                    <td>{{ database_status['maintenance_mode'] }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last finished update</th>
+                                    <td>{{ database_status['last_update'] }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        Digestion paramters
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Paramter</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th>Enzyme</th>
+                                    <td>{{ digestion_paramters['enzyme_name'] }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Allowed missed cleavages</th>
+                                    <td>{{ digestion_paramters['maximum_number_of_missed_cleavages'] }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Peptide length</th>
+                                    <td>{{ digestion_paramters['minimum_peptide_length'] }} - {{ digestion_paramters['maximum_peptide_length'] }} </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col col-md-6">
                 <div class="card">
                     <div class="card-header">
                         Peptides
@@ -37,7 +93,9 @@
                     </div>
                 </div>
             </div>
-            <div class="col col-md-6">
+        </div>
+        <div class="row">
+            <div class="col col-md-12">
                 <div class="card">
                     <div class="card-header">
                         Peptide partition information
