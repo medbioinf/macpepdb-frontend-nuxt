@@ -4,6 +4,8 @@ $application-menu-transition-time: .5s
     top: 0
     background-color: $rub-grey
     padding-bottom: 0 !important
+    @include media-breakpoint-down(lg)
+        z-index: 100
     @include media-breakpoint-up(lg)
         height: 100vh
 
