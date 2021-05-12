@@ -1,4 +1,4 @@
-FROM python:3.7.7-buster
+FROM python:3.8.8-buster
 LABEL maintainer="dirk.winkelhardt@gmail.com"
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
