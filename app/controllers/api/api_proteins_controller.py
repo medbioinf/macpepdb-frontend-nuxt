@@ -1,3 +1,4 @@
+from os import access
 import sys
 
 from sqlalchemy import between, and_
@@ -7,12 +8,13 @@ from flask import request, jsonify, url_for
 from macpepdb.proteomics.mass.convert import to_float as mass_to_float
 from macpepdb.proteomics.enzymes.digest_enzyme import DigestEnzyme
 from macpepdb.models.protein import Protein
-from macpepdb.models.peptide import Peptide
 
-from app import app, macpepdb_session
+from app import app, get_database_connection
+from ...models.convert import peptide_to_dict, protein_to_dict
 from ..application_controller import ApplicationController
 
 class ApiProteinsController(ApplicationController):
+    @staticmethod
     @app.route("/api/proteins/digest", endpoint="api_protein_digest_path", methods=["POST"])
     def digest():
         errors = []
@@ -43,32 +45,25 @@ class ApiProteinsController(ApplicationController):
                 if not len(errors):
                     EnzymeClass = DigestEnzyme.get_enzyme_by_name("trypsin")
                     enzyme = EnzymeClass(data["maximum_number_of_missed_cleavages"], data["minimum_peptide_length"], data["maximum_peptide_length"])
-                    peptides = enzyme.digest(Protein('>tmp', 'macpepdb_temporary', 'MaCPepDB Temporary', data["sequence"], 0, "temporary", False))
-                    peptides.sort(key = lambda peptide: peptide.weight)
+                    peptides = enzyme.digest(Protein("TMP", [], "TMP", "TMP", data["sequence"], [], [], False))
             elif "accession" in data:
-                try:
-                    protein = macpepdb_session.query(Protein).filter(Protein.accession == data["accession"]).one()
-                except sqlalchemy_exceptions.NoResultFound as error:
-                    protein = None
-
-                if protein:                    
-                    peptides = protein.peptides.order_by(Peptide.weight).filter(
-                        Peptide.number_of_missed_cleavages <= data["maximum_number_of_missed_cleavages"],
-                        between(Peptide.length, data["minimum_peptide_length"], data["maximum_peptide_length"])
-                    ).all()
-                else:
-                    errors.append("no protein for accession '{}' found".format(data["accession"]))
+                database_connection = get_database_connection()
+                with database_connection.cursor() as database_cursor:
+                    protein = Protein.select(database_cursor, ("accession = %s", [data["accession"]]))
+                    if protein:
+                        peptides = list(filter(
+                            lambda peptide: peptide.number_of_missed_cleavages <= data["maximum_number_of_missed_cleavages"] and data["minimum_peptide_length"] <= peptide.length <= data["maximum_peptide_length"],
+                            protein.peptides(database_cursor)
+                        ))
+                    else:
+                        errors.append("no protein for accession '{}' found".format(data["accession"]))
             else:
                 errors.append("you have to specify sequence or accession")
 
+        peptides.sort(key = lambda peptide: peptide.mass)
         if not len(errors):
-            peptide_dicts = []
-            for peptide in peptides:
-                peptide_dict = peptide.to_dict()
-                peptide_dict["weight"] = mass_to_float(peptide_dict["weight"])
-                peptide_dicts.append(peptide_dict)
             return jsonify({
-                "peptides": peptide_dicts,
+                "peptides": [peptide_to_dict(peptide) for peptide in peptides],
                 "count": len(peptides)
             })
         else:
@@ -80,36 +75,25 @@ class ApiProteinsController(ApplicationController):
     @app.route("/api/proteins/<string:accession>", endpoint="api_protein_path")
     def search(accession):
         accession = accession.upper()
-        errors = []
 
         include_peptides = request.args.get("include_peptides", type=int, default=0)
+        database_connection = get_database_connection()
 
-        response_data = {}
+        with database_connection.cursor() as database_cursor:
+            protein = Protein.select(database_cursor, ("accession = %s", [accession]))
 
-        try:
-            protein = macpepdb_session.query(Protein).filter(Protein.accession == accession).one()
-        except sqlalchemy_exceptions.NoResultFound as error:
-            protein = None
+            if protein:
+                response_data = {
+                    "protein": protein_to_dict(protein),
+                    "url": url_for("protein_path", accession=protein.accession, _external=True)
+                }
 
-        if protein:
-            response_data["protein"] = protein.to_dict()
-            response_data["url"] = url_for("protein_path", accession=protein.accession, _external=True)
+                if include_peptides:
+                    response_data["peptides"] = [peptide_to_dict(peptide) for peptide in protein.peptides(database_cursor)]
 
-            if include_peptides:
-                peptides = protein.peptides.all()
-                peptide_dicts = []
-                for peptide in peptides:
-                    peptide_dict = peptide.to_dict()
-                    peptide_dict["mass"] = mass_to_float(peptide_dict.pop("weight"))
-                    peptide_dicts.append(peptide_dict)
-                response_data["peptides"] = peptide_dicts
-        else:            
-            errors.append("no protein for accession '{}' found".format(accession))
-
-        if not len(errors):
-            return jsonify(response_data)
-        else:   
-            return jsonify({
-                "errors": errors
-            }), 422
+                    return jsonify(response_data)
+            else:               
+                return jsonify({
+                    "errors": [f"no protein for accession '{accession}' found"]
+                }), 422
 

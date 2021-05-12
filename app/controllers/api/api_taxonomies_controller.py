@@ -6,7 +6,7 @@ from flask import request, jsonify, url_for
 from macpepdb.models.taxonomy import Taxonomy
 from macpepdb.models.taxonomy_merge import TaxonomyMerge
 
-from app import app, macpepdb_session
+from app import app, get_database_connection
 from ..application_controller import ApplicationController
 
 class ApiTaxonomiesController(ApplicationController):
@@ -25,49 +25,52 @@ class ApiTaxonomiesController(ApplicationController):
             condition = None
             if isinstance(data["query"], str):
                 query = data["query"].replace("*", "%")
-                condition = Taxonomy.name.like(query)
+                condition = ("name LIKE %s", [query])
             else: 
-                condition = Taxonomy.id == data["query"]
+                condition = ("id = %s", [data["query"]])
 
-            taxonomies = macpepdb_session.query(Taxonomy).filter(condition).all()
+            database_connection = get_database_connection()
+            with database_connection.cursor() as database_cursor:
+                taxonomies = Taxonomy.select(database_cursor, condition, fetchall=True)
 
-            if isinstance(data["query"], int) and not len(taxonomies):
-                taxonomy_merge = macpepdb_session.query(TaxonomyMerge).filter(TaxonomyMerge.source_id == data["query"]).one_or_none()
-                if taxonomy_merge:
-                    taxonomies = macpepdb_session.query(Taxonomy).filter(Taxonomy.id == taxonomy_merge.target_id).all()
+                if isinstance(data["query"], int) and not len(taxonomies):
+                    taxonomy_merge = TaxonomyMerge.select(database_cursor, ("source_id = %s", [data["query"]]))
+                    if taxonomy_merge:
+                        taxonomies = Taxonomy.select(database_cursor, ("id = %s", [taxonomy_merge.target_id]), fetchall=True)
 
-            response = []
-
-            for taxonomy in taxonomies:
-                response.append({
+                response = [{
                     "id": taxonomy.id,
                     "name": taxonomy.name
-                })
+                } for taxonomy in taxonomies]
+
             return jsonify(response)
         else:
             return jsonify(errors), 422
 
     @staticmethod
-    @app.route("/api/taxonomies/<string:id>", endpoint="api_taxonomy_path")
+    @app.route("/api/taxonomies/<int:id>", endpoint="api_taxonomy_path")
     def show(id):
-        taxonomy = macpepdb_session.query(Taxonomy).filter(Taxonomy.id == id).one_or_none()
+        database_connection = get_database_connection()
+        with database_connection.cursor() as database_cursor:
+            taxonomy = Taxonomy.select(database_cursor, ("id = %s", [id]))
 
-        if not taxonomy:
-            taxonomy_merge = macpepdb_session.query(TaxonomyMerge).filter(TaxonomyMerge.source_id == id).one_or_none()
-            if taxonomy_merge:
-                taxonomy = macpepdb_session.query(Taxonomy).filter(Taxonomy.id == taxonomy_merge.target_id).one_or_none()
+            if not taxonomy:
+                taxonomy_merge = TaxonomyMerge.select(database_cursor, ("source_id = %s", [id]))
+                if taxonomy_merge:
+                    taxonomy = Taxonomy.select(database_cursor, ("id = %s", [taxonomy_merge.target_id]))
 
-        response = None
-        if taxonomy:
-            response = {
-                "id": taxonomy.id,
-                "name": taxonomy.name,
-                "parent": taxonomy.parent_id,
-                "children": []
-            }
+
+            response = None
+            if taxonomy:
+                response = {
+                    "id": taxonomy.id,
+                    "name": taxonomy.name,
+                    "parent": taxonomy.parent_id,
+                    "children": [taxonomy.id for taxonomy in taxonomy.children(database_cursor)]
+                }
+
+        if response:
+            return jsonify(response)
         else:
             return jsonify(["not found"]), 422
-        if taxonomy:
-            children_id_rows = macpepdb_session.query(Taxonomy.id).filter(Taxonomy.parent_id == taxonomy.id).all()
-            response["children"] = [row[0] for row in children_id_rows]
-        return jsonify(response)
+        

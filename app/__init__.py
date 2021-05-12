@@ -1,9 +1,8 @@
 import pathlib
-import gc
 
-from flask import Flask
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from flask import Flask, g as request_store
+from psycopg2.pool import ThreadedConnectionPool
+
 
 from macpepdb.proteomics.mass.convert import to_float as mass_to_float
 
@@ -40,14 +39,25 @@ def inject_global_variables():
     )
 
 # Initialize connection pool for MaCPepDB database
-macpepdb = create_engine(config['macpepdb']['url'], pool_size = config['macpepdb']['pool_size'], max_overflow = 0, pool_timeout=None)
-macpepdb_session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=macpepdb))
-# Remove session for macpepdb after request is done
+__macpepdb_pool = ThreadedConnectionPool(1, config['macpepdb']['pool_size'], config['macpepdb']['url'])
+
+def get_database_connection():
+    """
+    Takes a database connection from the pool, stores it in the request_store and returns it.
+    It is automatically returned to the database pool after the requests is finished.
+    """
+    if "database_connection" not in request_store:
+        request_store.database_connection = __macpepdb_pool.getconn() # pylint: disable=assigning-non-slot
+    return request_store.database_connection
+
 @app.teardown_appcontext
-def shutdown_session(exception=None):
-    macpepdb_session.remove()
-    # Run garbage collection to make sure unnecessary resource from session are freed up.
-    gc.collect()
+def return_database_connection_to_pool(exception=None):
+    """
+    Returns the database connection to the pool
+    """
+    database_connection = request_store.pop("database_connection", None)
+    if database_connection:
+        __macpepdb_pool.putconn(database_connection)
 
 # Import controllers.
 # Do not move this import to the top of the files. Each controller uses 'app' to build the routes.

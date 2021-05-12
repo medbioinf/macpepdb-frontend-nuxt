@@ -1,23 +1,16 @@
-import sys
-import orjson
 import math
 
 from flask import jsonify, Response
-from sqlalchemy import func, distinct, and_, select, desc, asc
-from sqlalchemy.orm import sessionmaker, aliased
 
 from macpepdb.proteomics.mass.convert import to_int as mass_to_int, to_float as mass_to_float
-from macpepdb.proteomics.modification import Modification, ModificationPosition
-from macpepdb.proteomics.amino_acid import AminoAcid
+from macpepdb.proteomics.modification import Modification
 from macpepdb.proteomics.modification_collection import ModificationCollection
-from macpepdb.models.modified_peptide_where_clause_builder import ModifiedPeptideWhereClauseBuilder
-from macpepdb.models.protein import Protein
+from macpepdb.models.modification_combination_list import ModificationCombinationList, ModificationCombination
 from macpepdb.models.taxonomy import Taxonomy, TaxonomyRank
 from macpepdb.models.peptide import Peptide
-from macpepdb.models.associacions import proteins_peptides as proteins_peptides_table
 
 
-from app import macpepdb, app
+from app import get_database_connection
 from ..application_controller import ApplicationController
 
 class ApiAbstractPeptideController(ApplicationController):
@@ -25,6 +18,8 @@ class ApiAbstractPeptideController(ApplicationController):
     SUPPORTED_ORDER_COLUMNS = ['mass', 'length', 'sequence', 'number_of_missed_cleavages']
     SUPPORTED_ORDER_DIRECTIONS = ['asc', 'desc']
     FASTA_SEQUENCE_LEN = 60
+
+    PEPTIDE_QUERY_DEFAULT_COLUMNS = ["mass", "sequence", "number_of_missed_cleavages", "length", "is_swiss_prot", "is_trembl", "taxonomy_ids", "unique_taxonomy_ids", "proteome_ids"]
 
     @staticmethod
     def _search(request):
@@ -36,22 +31,15 @@ class ApiAbstractPeptideController(ApplicationController):
             include_count = data['include_count']
 
         order_by = None
-        order_direction = asc
         if 'order_by' in data:
             if isinstance(data['order_by'], str) and data['order_by'] in ApiAbstractPeptideController.SUPPORTED_ORDER_COLUMNS:
-                if data['order_by'] == 'mass':
-                    order_by = 'weight'
-                else:
-                    order_by = data['order_by']
+                order_by = data['order_by']
             else:
                 errors.append(f"'order_by' must be a string with one of following values: {', '.join(ApiAbstractPeptideController.SUPPORTED_ORDER_COLUMNS)}")
         
 
         if 'order_direction' in data:
-            if isinstance(data['order_direction'], str) and data['order_direction'] in ApiAbstractPeptideController.SUPPORTED_ORDER_DIRECTIONS:
-                if data['order_direction'] == 'desc':
-                    order_direction = desc
-            else:
+            if not isinstance(data['order_direction'], str) or not data['order_direction'] in ApiAbstractPeptideController.SUPPORTED_ORDER_DIRECTIONS:
                 errors.append(f"'order_direction' must be a string with one of following values: {', '.join(ApiAbstractPeptideController.SUPPORTED_ORDER_DIRECTIONS)}")
 
         # Get accept header (default 'application/json'), split by ',' in case multiple mime types where supported and take the first one
@@ -93,82 +81,65 @@ class ApiAbstractPeptideController(ApplicationController):
             modification_collection = ModificationCollection(modifications)
         except Exception as e:
             errors.append("{}".format(e))
-        
+
+        database_connection = get_database_connection()
         if not len(errors):
             if "precursor" in data:
                 if isinstance(data["precursor"], float) or isinstance(data["precursor"], int):
 
-                    where_clause_builder = ModifiedPeptideWhereClauseBuilder(
+                    modification_combination_list = ModificationCombinationList(
                         modification_collection, 
                         mass_to_int(data["precursor"]),
                         data["lower_precursor_tolerance_ppm"],
                         data["upper_precursor_tolerance_ppm"],
                         data["variable_modification_maximum"]
                     )
-                    where_clause = where_clause_builder.build(Peptide)
 
-                    count_query = select([func.count(distinct(Peptide.id))]).where(where_clause).select_from(Peptide.__table__)
-                    peptides_query = None
-                    if not output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
-                        peptides_query = Peptide.__table__.select(where_clause)
-                    else:
-                        peptides_query = select([Peptide.id, Peptide.sequence]).where(where_clause).distinct()
+                    peptides_query = f"SELECT DISTINCT <COLUMNS> FROM {Peptide.TABLE_NAME} WHERE mass BETWEEN %s AND %s"
 
-                    # Array for conditions on proteins
-                    protein_conditions = []
+                    # Dict where the key is a peptide column name and the value is a tuple with a operator (string) and a the values.
+                    metadata_conditions = {}
                     if "taxonomy_id" in data:
                         if isinstance(data["taxonomy_id"], int):
                             # Recursively select all taxonomies below the given one
-                            recursive_query = select(Taxonomy.__table__.columns).where(Taxonomy.id == data["taxonomy_id"]).cte(recursive=True)
-                            parent_taxonomies = recursive_query.alias()
-                            child_taxonomies = Taxonomy.__table__.alias()
-                            sub_taxonomies = recursive_query.union_all(select(child_taxonomies.columns).where(child_taxonomies.c.parent_id == parent_taxonomies.c.id))
-                            sub_species_id_query = select([sub_taxonomies.c.id])
+                            recursive_subspecies_id_query = (
+                                "WITH RECURSIVE subtaxonomies AS ("
+                                    "SELECT id, parent_id, rank "
+                                    f"FROM {Taxonomy.TABLE_NAME} "
+                                    "WHERE id = %s "
+                                    "UNION " 
+                                        "SELECT t.id, t.parent_id, t.rank "
+                                        f"FROM {Taxonomy.TABLE_NAME} t "
+                                        "INNER JOIN subtaxonomies s ON s.id = t.parent_id "
+                                f") SELECT id FROM subtaxonomies WHERE rank = %s;"
+                            )
 
-                            with macpepdb.connect() as connection:
-                                sub_species_ids = [row[0] for row in connection.execute(sub_species_id_query).fetchall()]
-                            
-                            if len(sub_species_ids) == 1:
-                                protein_conditions.append(Protein.taxonomy_id == sub_species_ids[0])
-                            elif len(sub_species_ids) > 1:
-                                protein_conditions.append(Protein.taxonomy_id.in_(sub_species_ids))
+                            with database_connection.cursor() as db_cursor:
+                                db_cursor.execute(recursive_subspecies_id_query, (data["taxonomy_id"], TaxonomyRank.SPECIES.value))
+                                metadata_conditions["taxonomy_ids"] = ("any", [row[0] for row in db_cursor.fetchall()])
+
                         else:
                             errors.append("taxonomy_id has to be of type int")
 
                     if "proteome_id" in data:
                         if isinstance(data["proteome_id"], str):
-                            protein_conditions.append(Protein.proteome_id == data["proteome_id"])
+                            metadata_conditions["proteome_ids"] = ("in", data["proteome_id"])
                         else:
                             errors.append("proteome_id has to be of type string")
 
                     if "is_reviewed" in data:
                         if isinstance(data["is_reviewed"], bool):
-                            protein_conditions.append(Protein.is_reviewed == data["is_reviewed"])
+                            if data["is_reviewed"]:
+                                metadata_conditions["is_swiss_prot"] = ("=", True)
+                            else:
+                                metadata_conditions["is_trembl"] = ("=", True)
                         else:
-                            errors.append("is_reviewed has to be of type int")
+                            errors.append("is_reviewed has to be of type boolean")
 
-                    if len(protein_conditions):
-                        # Concatenate conditions with and
-                        protein_where_clause = and_(*protein_conditions)
-                        # Rebuild count query
-                        inner_count_query = select([Peptide.id]).where(where_clause).select_from(Peptide.__table__).alias('mass_specific_peptides')
-                        protein_join = inner_count_query.join(proteins_peptides_table, proteins_peptides_table.c.peptide_id == inner_count_query.c.id)
-                        protein_join = protein_join.join(Protein.__table__, Protein.id == proteins_peptides_table.c.protein_id)
-                        count_query = select([func.count(distinct(inner_count_query.c.id))]).select_from(protein_join).where(protein_where_clause)
-
-                        # Create alais for the inner query
-                        inner_peptide_query = peptides_query.alias('mass_specific_peptides')
-                        # Join innder query with proteins
-                        protein_join = inner_peptide_query.join(proteins_peptides_table, proteins_peptides_table.c.peptide_id == inner_peptide_query.c.id)
-                        protein_join = protein_join.join(Protein.__table__, Protein.id == proteins_peptides_table.c.protein_id)
-                        # Create select around the inner query
-                        peptides_query = select(inner_peptide_query.columns).select_from(protein_join).where(protein_where_clause)
-
-                    # Sort by weight
+                    # Sort by `order_by`
                     if order_by and not output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
-                        peptides_query = peptides_query.order_by(order_direction(peptides_query.c[order_by]))
-
-                    peptides_query = peptides_query.distinct()
+                        peptides_query += f" ORDER BY {order_by} {data['order_direction']}"
+                    peptides_query += ";"
 
                     # Note about offset and limit: It is much faster to fetch data from server and discard rows below the offset and stop the fetching when the limit is reached, instead of applying LIMIT and OFFSET directly to the query.
                     # Even on high offsets, which discards a lot of rows, this approach is faster.
@@ -198,203 +169,246 @@ class ApiAbstractPeptideController(ApplicationController):
                 "errors": errors
             }), 422
 
+
+        modification_combination_list = modification_combination_list if len(modification_combination_list) else [ModificationCombination([], mass_to_int(data["precursor"]), data["lower_precursor_tolerance_ppm"], data["upper_precursor_tolerance_ppm"])] 
+
         if output_style ==  ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]:
-            def generate_json_stream(peptides_query, peptide_count_query, include_count: bool, offset: int, limit: int):
-                """
-                Serialize the given peptides as JSON objects, structure: {'result_key': [peptide_json, ...]}
-                @param peptides_query The query for peptides
-                @param peptide_count_query The query to count the peptides.
-                @param result_key Name of the result key within the JSON-objecte, e.g. {'result_key': [peptide_json, ...]}
-                @param include_count Boolean to include count in the results, e.g. {'count': 0, 'result_key': [peptide_json, ...]}
-                @param offset Result offset
-                @param limit Result limit
-                """
-                with macpepdb.connect() as db_connection:
-                    # Open a JSON object
-                    yield b"{"
-                    # Check if there are pepritdes
-                    # Add count to open object
-                    if include_count:
-                        peptide_count = db_connection.execute(peptide_count_query).fetchone()[0]
-                        yield f"\"count\":{peptide_count},".encode()
-                    yield f"\"peptides\":[".encode()
-                    # Create cursor to stream results
-                    peptides_cursor = db_connection.execution_options(stream_results=True).execute(peptides_query)
-                    is_first_chunk = True
-                    peptide_counter = 0
+            return ApiAbstractPeptideController.generate_json_respond(database_connection, peptides_query, modification_combination_list, metadata_conditions, include_count, offset, limit)
+        elif output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[1]:
+            return ApiAbstractPeptideController.generate_octet_response(database_connection, peptides_query, modification_combination_list, metadata_conditions, offset, limit)
+        elif output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
+            return ApiAbstractPeptideController.generate_txt_response(database_connection, peptides_query, modification_combination_list, metadata_conditions, offset, limit)
+
+    @staticmethod
+    def generate_json_respond(database_connection, peptides_query: str, modification_combination_list: ModificationCombinationList, metadata_conditions: dict, include_count: bool, offset: int, limit: int):
+        """
+        Serialize the given peptides as JSON objects, structure: {'result_key': [peptide_json, ...]}
+        @param database_connection
+        @param peptides_query The query for peptides
+        @param modification_combination_list List of modification combinations to match
+        @param metadata_conditions Conditions for metadata
+        @param include_count Boolean to include count in the results, e.g. {'count': 0, 'peptides': [{'sequence': 'PEPTIDER', ...}, ...]}
+        @param offset Result offset
+        @param limit Result limit
+        """
+        def generate_json_stream():
+            with database_connection.cursor() as db_cursor:
+                # Counter for peptides which matches the given filters
+                matching_peptide_counter = 0
+                # Open a JSON object and peptide array
+                yield b"{\"peptides\":["
+                for modification_combination in modification_combination_list:
+                    query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions.keys())
+                    finished_query = peptides_query.replace("<COLUMNS>", ", ".join(query_columns))
+
+                    db_cursor.execute(finished_query, (modification_combination.precursor_range.lower_limit, modification_combination.precursor_range.upper_limit))
                     written_peptide_counter = 0
-                    while written_peptide_counter < limit:
-                        # Fetch 10000 results
-                        peptides_chunk = peptides_cursor.fetchmany(10000)
+                    while written_peptide_counter < limit or include_count:
+                        # Fetch 10000 peptides
+                        peptides_chunk = db_cursor.fetchmany(10000)
                         # Stop loop if no results were fetched
                         if not peptides_chunk:
                             break
-                        # If this is not the first chunk, append a ',', because the last peptide of the previous chunk does not has one appended
-                        if not is_first_chunk:
-                            yield b","
-                        # Create iterator 
-                        peptides_chunk_iter = peptides_chunk.__iter__()
-                        # Get first result
-                        previous_peptide_row = next(peptides_chunk_iter)
-                        # Iterate over the remaining rows in this chunk
-                        for peptide_row in peptides_chunk_iter:
-                            # Increase counter for each peptide
-                            peptide_counter += 1
-                            # Write peptide to stream if peptide counter is larger than offset
-                            if peptide_counter > offset:
-                                # Write the previous peptide to stream ...
-                                peptide_dict = {str(key): value for key, value in previous_peptide_row.items()}
-                                peptide_dict["mass"] = mass_to_float(peptide_dict.pop("weight"))
-                                peptide_dict['peff_notation_of_modifications'] = ''
-                                yield orjson.dumps(peptide_dict)
-                                # ... and append 
-                                yield b","
+                        for peptide_row in peptides_chunk:
+                            if not ApiAbstractPeptideController.check_column_conditions(peptide_row, query_columns, metadata_conditions, modification_combination.column_conditions):
+                                continue
+                            matching_peptide_counter += 1
+                            # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
+                            if matching_peptide_counter > offset and written_peptide_counter < limit:
+                                # Prepend comma if this is not the first returned peptide
+                                if written_peptide_counter > 0 :
+                                    yield b","
+                                for json_chunk in ApiAbstractPeptideController.peptide_row_to_json_generator(peptide_row):
+                                    yield json_chunk
                                 # Increase written peptides
                                 written_peptide_counter += 1
-                            # Mark the current peptide as previous peptide for next iteration
-                            previous_peptide_row = peptide_row
-                            # Break for-loop if limit - 1 peptides where written and stop result streaming. After the last peptide is written (after the for loop) streaming is stopped.
-                            if written_peptide_counter == limit - 1:
+                            # Break for-loop if written_peptide_counter reaches the limit and include_count is false. If include_count is true we iterate over all peptide in mass range to count the matching peptides.
+                            if written_peptide_counter == limit and not include_count:
                                 break
-                        # Increase counter for last peptide
-                        peptide_counter += 1
-                        if peptide_counter > offset:
-                            # Now write the last peptide without a ',' at the end
-                            peptide_dict = {str(key): value for key, value in previous_peptide_row.items()}
-                            peptide_dict["mass"] = mass_to_float(peptide_dict.pop("weight"))
-                            peptide_dict['peff_notation_of_modifications'] = ''
-                            yield orjson.dumps(peptide_dict)
-                            # Increase written peptides
-                            written_peptide_counter += 1
-                            is_first_chunk = False
-                    # Close array and object
-                    yield b"]}"
-            # Send stream
-            return Response(generate_json_stream(peptides_query, count_query, include_count, offset, limit), content_type=f"{ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]}; charset=utf-8")
-        elif output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[1]:
-            def generate_octet_stream(peptides_query, offset: int, limit: int):
-                """
-                This will generate a stream of JSON-formatted peptides per line. Each JSON-string is bytestring.
-                @param peptides_query The query for peptides
-                @param offset Result offset
-                @param limit Result limit
-                """
-                with macpepdb.connect() as db_connection:
-                    # Create cursor
-                    peptides_cursor = db_connection.execution_options(stream_results=True).execute(peptides_query)
-                    is_first_chunk = True
-                    peptide_counter = 0
+                    if not include_count:
+                        # Close array and object
+                        yield b"]}"
+                    else:
+                        # Close array, add count and close object
+                        yield f"],\"count\":{matching_peptide_counter}}}".encode()
+                    break
+        # Send stream
+        return Response(generate_json_stream(), content_type=f"{ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]}; charset=utf-8")
+
+    @staticmethod
+    def generate_octet_response(database_connection, peptides_query: str, modification_combination_list: ModificationCombinationList, metadata_conditions: dict, offset: int, limit: int):
+        """
+        This will generate a stream of JSON-formatted peptides per line. Each JSON-string is bytestring.
+        @param database_connection
+        @param peptides_query The query for peptides
+        @param modification_combination_list List of modification combinations to match
+        @param metadata_conditions Conditions for metadata
+        @param include_count Boolean to include count in the results, e.g. {'count': 0, 'peptides': [{'sequence': 'PEPTIDER', ...}, ...]}
+        @param offset Result offset
+        @param limit Result limit
+        """
+        def generate_octet_stream():
+            with database_connection.cursor() as db_cursor:
+                # Counter for peptides which matches the given filters
+                matching_peptide_counter = 0
+
+                for modification_combination in modification_combination_list:
+                    query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions.keys())
+                    finished_query = peptides_query.replace("<COLUMNS>", ", ".join(query_columns))
+
+                    db_cursor.execute(finished_query, (modification_combination.precursor_range.lower_limit, modification_combination.precursor_range.upper_limit))
                     written_peptide_counter = 0
                     while written_peptide_counter < limit:
-                        # Fetch 10000 results
-                        peptides_chunk = peptides_cursor.fetchmany(10000)
+                        # Fetch 10000 peptides
+                        peptides_chunk = db_cursor.fetchmany(10000)
                         # Stop loop if no results were fetched
-                        if not len(peptides_chunk):
+                        if not peptides_chunk:
                             break
-                        # If this is not the first chunk, append a new line, because the last peptide of the previous chunk does not has one appended
-                        if not is_first_chunk:
-                            yield b"\n"
-                        # Create iterator 
-                        peptides_chunk_iter = peptides_chunk.__iter__()
-                        # Get first result
-                        previous_peptide_row = next(peptides_chunk_iter)
-                        # Iterate over the remaining rows in this chunk
-                        for peptide_row in peptides_chunk_iter:
-                            # Increase counter for each peptide
-                            peptide_counter += 1
-                            # Write peptide to stream if peptide counter is larger than offset
-                            if peptide_counter > offset:
-                                # Write the previous peptide to stream ...
-                                peptide_dict = {str(key): value for key, value in previous_peptide_row.items()}
-                                peptide_dict["mass"] = mass_to_float(peptide_dict.pop("weight"))
-                                peptide_dict['peff_notation_of_modifications'] = ''
-                                yield orjson.dumps(peptide_dict)
-                                # ... and append 
-                                yield b"\n"
+                        for peptide_row in peptides_chunk:
+                            if not ApiAbstractPeptideController.check_column_conditions(peptide_row, query_columns, metadata_conditions, modification_combination.column_conditions):
+                                continue
+                            matching_peptide_counter += 1
+                            # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
+                            if matching_peptide_counter > offset and written_peptide_counter < limit:
+                                # Prepend newline if this is not the first returned peptide
+                                if written_peptide_counter > 0 :
+                                    yield b"\n"
+                                for json_chunk in ApiAbstractPeptideController.peptide_row_to_json_generator(peptide_row):
+                                    yield json_chunk
                                 # Increase written peptides
                                 written_peptide_counter += 1
-                            # Mark the current peptide as previous peptide for next iteration
-                            previous_peptide_row = peptide_row
-                            # Break for-loop if limit - 1 peptides where written. After the last peptide is written (after the for loop) streaming is stopped (while loop).
-                            if written_peptide_counter == limit - 1:
+                            # Break for-loop if written_peptide_counter reaches the limit.
+                            if written_peptide_counter == limit:
                                 break
-                        # Increase counter for the last peptide in chunk
-                        peptide_counter += 1
-                        # Now write the last peptide without a '\n' at the end
-                        if peptide_counter > offset:
-                            peptide_dict = {str(key): value for key, value in previous_peptide_row.items()}
-                            peptide_dict["mass"] = mass_to_float(peptide_dict.pop("weight"))
-                            peptide_dict['peff_notation_of_modifications'] = ''
-                            yield orjson.dumps(peptide_dict)
-                            # Increase written peptides
-                            written_peptide_counter += 1
-                            is_first_chunk = False
-            return Response(generate_octet_stream(peptides_query, offset, limit), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[1])
-        elif output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
-            def generate_txt_stream(peptide_query, offset: int, limit: int):
-                """
-                This will generate a stream of peptides in fasta format.
-                @param peptides_query The query for peptides
-                @params peptice_class Class of the peptides (Peptide/Decoy)
-                @param offset Result offset
-                @param limit Result limit
-                """
-                with macpepdb.connect() as db_connection:
-                    # Create cursor
-                    peptides_cursor = db_connection.execution_options(stream_results=True).execute(peptides_query)
-                    is_first_chunk = True
-                    peptide_counter = 0
+                    break
+        return Response(generate_octet_stream(), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[1])
+
+
+    @staticmethod
+    def generate_txt_response(database_connection, peptides_query: str, modification_combination_list: ModificationCombinationList, metadata_conditions: dict, offset: int, limit: int):
+        """
+        This will generate a stream of peptides in fasta format.
+        @param database_connection
+        @param peptides_query The query for peptides
+        @param modification_combination_list List of modification combinations to match
+        @param metadata_conditions Conditions for metadata
+        @param include_count Boolean to include count in the results, e.g. {'count': 0, 'peptides': [{'sequence': 'PEPTIDER', ...}, ...]}
+        @param offset Result offset
+        @param limit Result limit
+            """
+        def generate_txt_stream():
+            with database_connection.cursor() as db_cursor:
+                # Counter for peptides which matches the given filters
+                matching_peptide_counter = 0
+
+                for modification_combination in modification_combination_list:
+                    query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions.keys())
+                    finished_query = peptides_query.replace("<COLUMNS>", ", ".join(query_columns))
+
+                    db_cursor.execute(finished_query, (modification_combination.precursor_range.lower_limit, modification_combination.precursor_range.upper_limit))
                     written_peptide_counter = 0
                     while written_peptide_counter < limit:
-                        # Fetch 10000 results
-                        peptides_chunk = peptides_cursor.fetchmany(10000)
+                        # Fetch 10000 peptides
+                        peptides_chunk = db_cursor.fetchmany(10000)
                         # Stop loop if no results were fetched
-                        if not len(peptides_chunk):
+                        if not peptides_chunk:
                             break
-                        # If this is not the first chunk, append a new line, because the last peptide of the previous chunk does not has one appended
-                        if not is_first_chunk:
-                            yield "\n"
-                        # Create iterator 
-                        peptides_chunk_iter = peptides_chunk.__iter__()
-                        # Get first result
-                        previous_peptide_row = next(peptides_chunk_iter)
-                        # Iterate over the remaining rows in this chunk
-                        for row_idx, peptide_row in enumerate(peptides_chunk_iter):
-                            # Increase counter for each peptide
-                            peptide_counter += 1
-                            # Add newline to stream, if this is not the first peptide
-                            if row_idx > 0:
-                                yield "\n"
-                            # Write peptide to stream if peptide counter is larger than offset
-                            if peptide_counter > offset:
-                                # Write the previous peptide to stream ...
-                                yield f">lcl|PEPTIDE_{previous_peptide_row['id']}"
-                                # Write sequence in chunks of 60 amino acids ...
-                                seq_chunk_start = 0
-                                while seq_chunk_start < len(previous_peptide_row['sequence']):
-                                    # Write sequence from seq_chunk_start to seq_chunk_start+ApiAbstractPeptideController.FASTA_SEQUENCE_LEN (explicit end)
-                                    yield f"\n{previous_peptide_row['sequence'][seq_chunk_start:seq_chunk_start+ApiAbstractPeptideController.FASTA_SEQUENCE_LEN]}"
-                                    seq_chunk_start += ApiAbstractPeptideController.FASTA_SEQUENCE_LEN
+                        for peptide_row in peptides_chunk:
+                            if not ApiAbstractPeptideController.check_column_conditions(peptide_row, query_columns, metadata_conditions, modification_combination.column_conditions):
+                                continue
+                            matching_peptide_counter += 1
+                            # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
+                            if matching_peptide_counter > offset and written_peptide_counter < limit:
+                                # Prepend semicolon if this is not the first returned peptide
+                                if written_peptide_counter > 0 :
+                                    yield b"\n"
+                                # Begin FASTA entry with '>lcl|' ...
+                                yield b">lcl|"
+                                # ... add mass ...
+                                yield str(peptide_row[0]).encode()
+                                # ... add a underscore ...
+                                yield b"_"
+                                # ... add the sequence to create a unique fasta accession ...
+                                yield peptide_row[1].encode()
+                                # ... add the sequence in chunks of 60 amino acids ...
+                                for chunk_start in range(0, len(peptide_row[1]), 60):
+                                    yield b"\n"
+                                    yield peptide_row[1][chunk_start : chunk_start+60].encode()
                                 # Increase written peptides
                                 written_peptide_counter += 1
-                            # Mark the current peptide as previous peptide for next iteration
-                            previous_peptide_row = peptide_row
-                            # Break for-loop if limit - 1 peptides where written and stop result streaming. After the last peptide is written (after the for loop) streaming is stopped.
-                            if written_peptide_counter == limit - 1:
+                            # Break for-loop if written_peptide_counter reaches the limit.
+                            if written_peptide_counter == limit:
                                 break
-                        # Increase counter for last peptide
-                        peptide_counter += 1
-                        if peptide_counter > offset:
-                            # Now write the last peptide without a new line at the end
-                            yield f"\n>lcl|PEPTIDE_{previous_peptide_row['id']}"
-                            # Write sequence in chunks of 60 amino acids ...
-                            seq_chunk_start = 0
-                            while seq_chunk_start < len(previous_peptide_row['sequence']):
-                                # Write sequence from seq_chunk_start to seq_chunk_start+ApiAbstractPeptideController.FASTA_SEQUENCE_LEN (explicit end)
-                                yield f"\n{previous_peptide_row['sequence'][seq_chunk_start:seq_chunk_start+ApiAbstractPeptideController.FASTA_SEQUENCE_LEN]}"
-                                seq_chunk_start += ApiAbstractPeptideController.FASTA_SEQUENCE_LEN
-                            # Increase written peptides
-                            written_peptide_counter += 1
-                            is_first_chunk = False
-            return Response(generate_txt_stream(peptides_query, offset, limit), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2])
+                    break
+        return Response(generate_txt_stream(), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2])
         
+    @staticmethod
+    def check_column_conditions(peptide_row: tuple, column_names: list, metadata_conditions: dict, modification_conditions: dict) -> bool:
+        # Checking metadata columns starting with number_of_missed_cleavages
+        for column_idx in range (2, len(ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS)):
+            column_name = column_names[column_idx]
+            if column_name in metadata_conditions:
+                operator, condtion_value = metadata_conditions[column_name]
+                if not ApiAbstractPeptideController.execute_column_operator(peptide_row[column_idx], operator, condtion_value):
+                    return False
+        
+        for column_idx in range (len(ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS) - 1, len(column_names)):
+            column_name = column_names[column_idx]
+            if column_name in modification_conditions:
+                operator, condtion_value = modification_conditions[column_name]
+                if not ApiAbstractPeptideController.execute_column_operator(peptide_row[column_idx], operator, condtion_value):
+                    return False
+        return True
+
+    @staticmethod
+    def execute_column_operator(row_value, operator: str, condition_value) -> bool:
+        if operator == "=":
+            if not row_value == condition_value:
+                return False
+        elif operator == ">=":
+            if not row_value >= condition_value:
+                return False
+        elif operator == "in":
+            if not condition_value in row_value:
+                return False
+        elif operator == "any":
+            if not any(value in condition_value for value in row_value):
+                return False
+        return True
+
+    @staticmethod
+    def peptide_row_to_json_generator(peptide_row: tuple):
+        """
+        Generate a JSON-formatted string from am peptide row.
+        @param peptide_row Should contain the ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS as first elements.
+        """
+        # Open peptide object with 'mass' key ...
+        yield b"{\"mass\":"
+        # ... add mass as float as utf-8 encoded bytes ... 
+        yield str(mass_to_float(peptide_row[0])).encode()
+        # ... add comma and add new key for sequence with open string ...
+        yield b",\"sequence\":\""
+        # ... add sequence as bytes ...
+        yield peptide_row[1].encode()
+        # ... close sequence string, add comma and add key for review status ...
+        yield b"\",\"is_swiss_prot\":"
+        # ... write true or false to stream ...
+        yield b"true" if peptide_row[4] else b"false"
+        # ... add comma and add key for second review status ...
+        yield b",\"is_trembl\":"
+        # ... write true or false to stream ...
+        yield b"true" if peptide_row[5] else b"false"
+        # ... add comma, add key for taxonomy IDs and open array ...
+        yield b",\"taxonomy_ids\":["
+        # ... add commaseparated list of taxonomy IDs ...
+        yield ",".join([str(taxonomy_id) for taxonomy_id in peptide_row[6]]).encode()
+        # ... close array, add comma, add key for unique taxonomy IDs and add open array ...
+        yield b"],\"unique_taxonomy_ids\":["
+        # ... add commaseparated list of taxonomy IDs ...
+        yield ",".join([str(taxonomy_id) for taxonomy_id in peptide_row[7]]).encode()
+        # ... close array, add comma, add key for protoeme IDs and open array ...
+        yield b"],\"proteome_ids\":["
+        # ... add commaseparated list of proteome IDs (proteome IDs are strings, so they have to wrapped in quotation marks) ...
+        yield ",".join([f"\"{proteome_id}\"" for proteome_id in peptide_row[8]]).encode()
+        # ... close array and peptide object
+        yield b"]}"

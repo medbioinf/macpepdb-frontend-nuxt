@@ -98,10 +98,10 @@ const peptide_search_app_settings = {
         },
         searchPeptidesByWeight(){
             this.is_searching_for_peptides = true;
-            this.errors = [];
             var request_body = this.buildSearchData();
-            // If the search parameters differ from the on before reset the results and request the count
-            var is_same_search = this.areSearchParameterTheSameAsBefore(request_body);
+            // Reset the results and request the count if the search parameters differ from the one before and no errors occured during the last search, then reset the results and request the count
+            var is_same_search = this.areSearchParameterTheSameAsBefore(request_body) && this.errors.length == 0;
+            console.log(is_same_search)
             if(!is_same_search){
                 this.peptides = null;
                 this.peptide_count = 0;
@@ -109,6 +109,8 @@ const peptide_search_app_settings = {
                 request_body['include_count'] = true;
                 request_body.offset = 0;
             }
+            // Reset errors
+            this.errors = [];
             fetch(this.peptide_search_api_url, {
                 method: 'POST',
                 cache: 'no-cache',

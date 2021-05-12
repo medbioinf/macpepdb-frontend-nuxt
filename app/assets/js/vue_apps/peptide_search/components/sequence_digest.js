@@ -115,7 +115,7 @@ export default {
         setSelectedPeptide(peptide){
             if(this.selected_peptide == null || this.selected_peptide.sequence != peptide.sequence){
                 this.selected_peptide = peptide;
-                this.$store.commit('setMass', peptide.weight);
+                this.$store.commit('setMass', peptide.mass);
             } else {
                 this.selected_peptide = null;
                 this.$store.commit('setMass', null);

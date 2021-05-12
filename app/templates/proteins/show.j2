@@ -101,7 +101,7 @@
                             <a href="{{ url_for("peptide_path", sequence = peptide.sequence) }}">{{ peptide.sequence }}</a>
                         </th>
                         <td>
-                            {{ mass_to_float(peptide.weight) }}
+                            {{ mass_to_float(peptide.mass) }}
                         </td>
                     </tr>
                 {% endfor %}

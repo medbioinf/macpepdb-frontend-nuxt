@@ -28,7 +28,7 @@
                         Theoretical mass
                     </th>
                     <td>
-                        {{ mass_to_float(peptide.weight) }}
+                        {{ mass_to_float(peptide.mass) }}
                     </td>
                 </tr>
                 <tr>
@@ -45,6 +45,60 @@
                     </th>
                     <td>
                         {{ peptide.number_of_missed_cleavages }}
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        Taxonomies
+                    </th>
+                    <td>
+                        <ul>
+                            {% for id in peptide.metadata.taxonomy_ids %}
+                                {% with taxonomy = taxonomies[id] %}
+                                    <li>{% include "partials/taxonomy_link.j2" %}</li>
+                                {% endwith %}
+                            {% endfor %}
+                        </ul>
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        Unique for taxonomies
+                    </th>
+                    <td>
+                        <ul>
+                            {% for id in peptide.metadata.unique_taxonomy_ids %}
+                                {% with taxonomy = taxonomies[id] %}
+                                    <li>{% include "partials/taxonomy_link.j2" %}</li>
+                                {% endwith %}
+                            {% endfor %}
+                        </ul>
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        Proteomes IDs
+                    </th>
+                    <td>
+                        {{ peptide.metadata.proteome_ids | join(", ") }}
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        SwissProt/TrEMBL
+                    </th>
+                    <td>
+                        {% if peptide.metadata.is_swiss_prot %}
+                            <i class="fas fa-check">
+                        {% else %}
+                            <i class="fas fa-times">
+                        {% endif %}
+                        /
+                        {% if peptide.metadata.is_trembl %}
+                            <i class="fas fa-check">
+                        {% else %}
+                            <i class="fas fa-times">
+                        {% endif %}
                     </td>
                 </tr>
             </tbody>
@@ -77,7 +131,9 @@
                             </td>
                             {% set taxonomy = taxonomies[protein.taxonomy_id] %}
                             <td>
-                                <a href="https://www.uniprot.org/taxonomy/{{ taxonomy.id }}" target="_blank">{{ taxonomy.name }} ({{ taxonomy.id }})</a>
+                                {% with taxonomy = taxonomies[protein.taxonomy_id] %}
+                                    {% include "partials/taxonomy_link.j2" %}
+                                {% endwith %}
                             </td>
                         </tr>
                     {% endfor %}

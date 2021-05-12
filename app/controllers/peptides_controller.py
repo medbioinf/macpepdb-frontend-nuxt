@@ -5,20 +5,12 @@ import html
 
 from flask import request, render_template
 
-from sqlalchemy import between
-from sqlalchemy.orm import sessionmaker
-
 from macpepdb.proteomics.amino_acid import AminoAcid, AMINO_ACIDS_FOR_COUNTING
-from macpepdb.proteomics.modification import Modification, ModificationPosition
-from macpepdb.proteomics.modification_collection import ModificationCollection
-from macpepdb.proteomics.mass.convert import to_int as mass_to_int
+from macpepdb.proteomics.modification import ModificationPosition
 from macpepdb.models.peptide import Peptide
-from macpepdb.models.protein import Protein
-from macpepdb.proteomics.enzymes.digest_enzyme import DigestEnzyme
-from macpepdb.proteomics.mass.precursor_range import PrecursorRange
 from macpepdb.models.taxonomy import Taxonomy
 
-from app import app, macpepdb
+from app import app, get_database_connection
 from .application_controller import ApplicationController
 
 class PeptidesController(ApplicationController):
@@ -48,17 +40,17 @@ class PeptidesController(ApplicationController):
             digest_peptides_per_page = PeptidesController.PROTEIN_PEPTIDES_PER_SEARCH_PAGE
         )
         
+    @staticmethod
     @app.route("/peptides/<string:sequence>", endpoint="peptide_path")
     def show(sequence):
-        SessionClass = sessionmaker(bind = macpepdb)
-        session = SessionClass()
+        database_connection = get_database_connection()
 
-        peptide = session.query(Peptide).filter(Peptide.sequence == sequence.upper()).one()
-        proteins = peptide.proteins.all()
-        taxonomies = session.query(Taxonomy).filter(Taxonomy.id.in_([protein.taxonomy_id for protein in proteins])).distinct().all()
-        taxonomies = {taxonomy.id: taxonomy for taxonomy in taxonomies}
+        with database_connection.cursor() as database_cursor:
+            peptide = Peptide.select(database_cursor, ("sequence = %s", [sequence]), include_metadata=True)
+            proteins = peptide.proteins(database_cursor)
 
-        session.close()
+            taxonomies = Taxonomy.select(database_cursor, ("id = ANY(%s)", [[protein.taxonomy_id for protein in proteins]]), fetchall=True)
+            taxonomies = {taxonomy.id: taxonomy for taxonomy in taxonomies}
 
         return render_template(
             "peptides/show.j2",

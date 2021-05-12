@@ -8,7 +8,6 @@
 ```json
 {
     "protein": {
-        "id": 2063,
         "accession": "Q93079",
         "entry_name": "H2B1H_HUMAN",
         "name": "Histone H2B type 1-H",
@@ -27,7 +26,6 @@ To get the included peptides as well, add the parameter `include_peptides` with 
 ```json
 {
     "protein": {
-        "id": 2063,
         "accession": "Q93079",
         "entry_name": "H2B1H_HUMAN",
         "name": "Histone H2B type 1-H",
@@ -39,34 +37,12 @@ To get the included peptides as well, add the parameter `include_peptides` with 
     "url": "http://localhost/proteins/Q93079",
     "peptides": [
         {
-            "a_count": 2,
-            "c_count": 0,
             "c_terminus": "K",
-            "d_count": 0,
-            "e_count": 2,
-            "f_count": 0,
-            "g_count": 2,
-            "h_count": 1,
-            "id": 275088,
-            "j_count": 4,
-            "k_count": 2,
             "length": 17,
-            "m_count": 0,
-            "n_count": 0,
             "n_terminus": "J",
             "number_of_missed_cleavages": 1,
-            "o_count": 0,
-            "p_count": 1,
-            "q_count": 0,
-            "r_count": 0,
-            "s_count": 1,
             "sequence": "JJJPGEJAKHAVSEGTK",
-            "t_count": 1,
-            "u_count": 0,
-            "v_count": 1,
-            "w_count": 0,
             "mass": 1761.998831,
-            "y_count": 0
         },
         ...
     ]
@@ -107,35 +83,11 @@ example:
 #### ouput
 ```json
 {
-  "peptide": {
-    "a_count": 1,
-    "c_count": 0,
-    "c_terminus": "R",
-    "d_count": 1,
-    "e_count": 1,
-    "f_count": 2,
-    "g_count": 1,
-    "h_count": 0,
-    "id": 275019,
-    "j_count": 2,
-    "k_count": 0,
+  "peptide": 
     "length": 15,
-    "m_count": 2,
-    "n_count": 2,
-    "n_terminus": "A",
     "number_of_missed_cleavages": 0,
-    "o_count": 0,
-    "p_count": 0,
-    "q_count": 0,
-    "r_count": 1,
-    "s_count": 1,
     "sequence": "AMGJMNSFVNDJFER",
-    "t_count": 0,
-    "u_count": 0,
-    "v_count": 1,
-    "w_count": 0,
-    "mass": 1742.811994,
-    "y_count": 0
+    "mass": 1742.811994
   },
   "url": "http://localhost:3000/peptides/AMGJMNSFVNDJFER"
 }
@@ -147,39 +99,14 @@ To get the parent proteins as well, add the parameter `include_proteins` with va
 ```json
 {
     "peptide": {
-        "a_count": 1,
-        "c_count": 0,
-        "c_terminus": "R",
-        "d_count": 1,
-        "e_count": 1,
-        "f_count": 2,
-        "g_count": 1,
-        "h_count": 0,
-        "id": 275019,
-        "j_count": 2,
-        "k_count": 0,
         "length": 15,
-        "m_count": 2,
-        "n_count": 2,
-        "n_terminus": "A",
         "number_of_missed_cleavages": 0,
-        "o_count": 0,
-        "p_count": 0,
-        "q_count": 0,
-        "r_count": 1,
-        "s_count": 1,
         "sequence": "AMGJMNSFVNDJFER",
-        "t_count": 0,
-        "u_count": 0,
-        "v_count": 1,
-        "w_count": 0,
-        "mass": 1742.811994,
-        "y_count": 0
+        "mass": 1742.811994
     },
     "url": "http://localhost:3000/peptides/AMGJMNSFVNDJFER",
     proteins: [
         {
-            "id": 2063,
             "accession": "Q93079",
             "entry_name": "H2B1H_HUMAN",
             "name": "Histone H2B type 1-H",
@@ -244,68 +171,121 @@ example:
     "offset": 10,
     "taxonomy_id": 7955,
     "proteome_id": "UP000000437",
-    "is_reviewed": 1
+    "is_reviewed": true
 }
 ```
 
 #### output (application/json)
 ```json
 {
-    "count": 77,
     "peptides": [
         {
-            "a_count": 0,
-            "c_count": 0,
-            "c_terminus": "K",
-            "d_count": 0,
-            "e_count": 0,
-            "f_count": 0,
-            "g_count": 0,
-            "h_count": 1,
-            "id": 7740,
-            "j_count": 0,
-            "k_count": 2,
-            "length": 7,
-            "m_count": 0,
-            "n_count": 0,
-            "n_terminus": "Y",
-            "number_of_missed_cleavages": 1,
-            "o_count": 0,
-            "p_count": 0,
-            "q_count": 0,
-            "r_count": 0,
-            "s_count": 1,
-            "sequence": "YKHSVVK",
-            "t_count": 0,
-            "u_count": 0,
-            "v_count": 2,
-            "w_count": 0,
-            "mass": 859.491573,
-            "y_count": 1
+            "mass": 859.494958413,
+            "sequence": "RAMELLK",
+            "is_swiss_prot": true,
+            "is_trembl": true,
+            "taxonomy_ids": [
+                8032,
+                30455,
+                ...
+            ],
+            "unique_taxonomy_ids": [
+                30455,
+                194338,
+                ...
+            ],
+            "proteome_ids": [
+                "UP000261480",
+                "UP000001038",
+                ...
+            ]
+        },
+        {
+            "mass": 859.494958414,
+            "sequence": "TVMVVVGR",
+            "is_swiss_prot": true,
+            "is_trembl": true,
+            "taxonomy_ids": [
+                48701,
+                173247,
+                ...
+            ],
+            "unique_taxonomy_ids": [
+                48701,
+                64144,
+                ...
+            ],
+            "proteome_ids": [
+                "UP000053641",
+                "UP000264800",
+                ...
+            ]
+        },
+        {
+            "mass": 859.498798203,
+            "sequence": "RSSRQVK",
+            "is_swiss_prot": true,
+            "is_trembl": true,
+            "taxonomy_ids": [
+                1608454,
+                586833,
+                ...
+            ],
+            "unique_taxonomy_ids": [
+                60296,
+                41447,
+                ...
+            ],
+            "proteome_ids": [
+                "UP000504639",
+                "UP000265160",
+                ...
+            ]
+        },
+        {
+            "mass": 859.498798203,
+            "sequence": "SSRQVKR",
+            "is_swiss_prot": true,
+            "is_trembl": true,
+            "taxonomy_ids": [
+                1608454,
+                586833,
+                ...
+            ],
+            "unique_taxonomy_ids": [
+                60296,
+                41447,
+                ...
+            ],
+            "proteome_ids": [
+                "UP000504639",
+                "UP000265160",
+                ...
+            ]
         },
         ...
-    ]
+    ],
+    "count": 19
 }
 ```
 #### output (application/octet-stream)
 Bytestream which contains one peptide in JSON-format per line.
 ```
-{"sequence":"JJAMVWK","length":7,"number_of_missed_cleavages":0,"mass":859.498981153,"a_count":1,"c_count":0,"d_count":0,"e_count":0,"f_count":0,"g_count":0,"h_count":0,"j_count":2,"k_count":1,"m_count":1,"n_count":0,"o_count":0,"p_count":0,"q_count":0,"r_count":0,"s_count":0,"t_count":0,"u_count":0,"v_count":1,"w_count":1,"y_count":0,"n_terminus":"J","c_terminus":"K","id":1504140498,"peff_notation_of_modifications":""}
-{"sequence":"WMAJJKV","length":7,"number_of_missed_cleavages":1,"mass":859.498981153,"a_count":1,"c_count":0,"d_count":0,"e_count":0,"f_count":0,"g_count":0,"h_count":0,"j_count":2,"k_count":1,"m_count":1,"n_count":0,"o_count":0,"p_count":0,"q_count":0,"r_count":0,"s_count":0,"t_count":0,"u_count":0,"v_count":1,"w_count":1,"y_count":0,"n_terminus":"W","c_terminus":"V","id":273131111,"peff_notation_of_modifications":""}
-{"sequence":"MVJAJWK","length":7,"number_of_missed_cleavages":0,"mass":859.498981153,"a_count":1,"c_count":0,"d_count":0,"e_count":0,"f_count":0,"g_count":0,"h_count":0,"j_count":2,"k_count":1,"m_count":1,"n_count":0,"o_count":0,"p_count":0,"q_count":0,"r_count":0,"s_count":0,"t_count":0,"u_count":0,"v_count":1,"w_count":1,"y_count":0,"n_terminus":"M","c_terminus":"K","id":137426664,"peff_notation_of_modifications":""}
-{"sequence":"AJWJVMK","length":7,"number_of_missed_cleavages":0,"mass":859498981153,"a_count":1,"c_count":0,"d_count":0,"e_count":0,"f_count":0,"g_count":0,"h_count":0,"j_count":2,"k_count":1,"m_count":1,"n_count":0,"o_count":0,"p_count":0,"q_count":0,"r_count":0,"s_count":0,"t_count":0,"u_count":0,"v_count":1,"w_count":1,"y_count":0,"n_terminus":"A","c_terminus":"K","id":3831436491,"peff_notation_of_modifications":""}
-```
+{"mass":859.494958413,"sequence":"RAMELLK","is_swiss_prot":true,"is_trembl":true,"taxonomy_ids":[8032,30455,...],"unique_taxonomy_ids":[30455,194338,...],"proteome_ids":["UP000261480","UP000001038",...]}
+{"mass":859.494958414,"sequence":"TVMVVVGR","is_swiss_prot":true,"is_trembl":true,"taxonomy_ids":[48701,173247,...],"unique_taxonomy_ids":[48701,64144,...],"proteome_ids":["UP000053641","UP000264800",...]}
+{"mass":859.498798203,"sequence":"RSSRQVK","is_swiss_prot":true,"is_trembl":true,"taxonomy_ids":[1608454,586833,...],"unique_taxonomy_ids":[60296,41447,...],"proteome_ids":["UP000504639","UP000265160",...]}
+{"mass":859.498798203,"sequence":"SSRQVKR","is_swiss_prot":true,"is_trembl":true,"taxonomy_ids":[1608454,586833,...],"unique_taxonomy_ids":[60296,41447,...],"proteome_ids":["UP000504639","UP000265160",...]}
 #### output (text/plain))
 Text stream in fasta format.
 ```
->lcl|PEPTIDE_<ID>
-JJAMVWK
->lcl|PEPTIDE_<ID>
-WMAJJKV
->lcl|PEPTIDE_<ID>
-MVJAJWK
->lcl|PEPTIDE_<ID>
-AJWJVMK
+>lcl|859494958413_RAMELLK
+RAMELLK
+>lcl|859494958414_TVMVVVGR
+TVMVVVGR
+>lcl|859498798203_RSSRQVK
+RSSRQVK
+>lcl|859498798203_SSRQVKR
+SSRQVKR
 ```
 
 ### Calculate theoretical mass
@@ -352,7 +332,6 @@ Both examples will lead to
 ```json
 [
   {
-    "id": 71399,
     "name": "Pallaviciniaceae"
   }
 ]
@@ -380,7 +359,6 @@ If the given ID was merged with another one, only the new ID will reported. For 
     304441,
     984492
   ],
-  "id": 71399,
   "name": "Pallaviciniaceae",
   "parent": 186795
 }

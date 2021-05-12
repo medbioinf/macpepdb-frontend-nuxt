@@ -63,7 +63,8 @@ class ApiPeptideControllerTestCase(unittest.TestCase):
             
             # Test if peptides on position j are the same
             for j in range(len(chunk_from_all_results)):
-                self.assertEqual(chunk[j]['id'], chunk_from_all_results[j]['id'])
+                self.assertEqual(chunk[j]['sequence'], chunk_from_all_results[j]['sequence'])
+                self.assertEqual(chunk[j]['mass'], chunk_from_all_results[j]['mass'])
 
     def test_peptide_limit_offset_for_json(self):
         URL = "http://localhost:3000/api/peptides/search"
@@ -119,7 +120,8 @@ class ApiPeptideControllerTestCase(unittest.TestCase):
 
             # Test if peptides on position j are the same
             for j in range(len(chunk_from_all_results)):
-                self.assertEqual(chunk[j]['id'], chunk_from_all_results[j]['id'])
+                self.assertEqual(chunk[j]['sequence'], chunk_from_all_results[j]['sequence'])
+                self.assertEqual(chunk[j]['mass'], chunk_from_all_results[j]['mass'])
 
     def test_peptide_limit_offset_for_plain_text(self):
         URL = "http://localhost:3000/api/peptides/search"
