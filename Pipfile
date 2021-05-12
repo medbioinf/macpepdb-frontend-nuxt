@@ -9,7 +9,6 @@ bjoern = ">= 3, <4"
 Flask = ">=1, <2"
 macpepdb = {editable = true, ref = "dev", git = "https://github.com/mpc-bioinformatics/macpepdb.git"}
 matplotlib = ">=3, <4"
-orjson= ">=3, <4"
 PyYAML = ">=5, <6"
 psycopg2 = ">=2, <3"
 
@@ -17,9 +16,10 @@ psycopg2 = ">=2, <3"
 [dev-packages]
 pylint = "*"
 honcho = "*"
+requests = "*"
 
 [requires]
-python_version = "3.7"
+python_version = "3.8"
 
 [scripts]
 tests = "bash -c 'python -m unittest tests/*_test_case.py'"
