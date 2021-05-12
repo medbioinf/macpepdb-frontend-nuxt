@@ -1,2 +1,2 @@
 webpack: yarn run watch-build
-flask: sleep 5 && python run.py
+flask: echo "0" > app/static/bundle/buildtime.txt && python run.py
