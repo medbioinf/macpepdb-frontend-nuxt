@@ -1,16 +1,23 @@
 # MaCPepDB Web
 MaCPepDB is a web frontend for the database created with MaCPepDB.
 
+## Dependencies
+Only necessary for development and non-Docker installation
+* GIT
+* Build tools (Ubuntu: `build-essential`, Arch Linux: `base-devel`)
+* C/C++-header for PostgreSQL (Ubuntu: `libpq-dev`, Arch Linux: `postgresql-libs`)
+* C/C++-headers for libev (Ubuntu: `libev-dev`, Arch Linux: `libev`)
+* Rust Compiler
+* Docker & Docker Compose
+* Python 3.x
+* [pyenv](https://github.com/pyenv/pyenv)
+* NodeJS 14.x
+* yarn
+
 
 ## Development
 ### Prepare development environment
 ```bash
-# Install necessary dependencies for your distro
-sudo pacman -S python python-pip yarn nodejs npm libev
-
-# It is recommended to use a pyenv to make sure the python version is matching
-# Follow the instruction to install pyenv on https://github.com/pyenv/pyenv#installation
-
 # Install the correct python version. You can find the needed python version in .python-version at the beginning of the string (.python-version contains the actual name of the python environment).
 # The following command will extract the python version from .python-version for you and install it
 pyenv install $(cat .python-version | awk 'BEGIN { FS = "/" } ; { print $1 }')
