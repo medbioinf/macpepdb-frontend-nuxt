@@ -38,12 +38,12 @@ pipenv run dev
 
 ## Configuration
 The Configuration is split into multiple files which for different environments:
-file | read order | environment | purpose
-- | - | - | -
-`config.yaml` | 1 | all | config definition
-`config.development.yaml` | 2 | development | contains all necessary information for the development environment
-`config.production.yaml` | 2 | production | some minor adjustments for production
-`config.local.yaml` | 4 | all | excluded from GIT, every user specific overwrite
+| file | read order | environment | purpose |
+| --- | --- | --- | --- |
+| `config.yaml` | 1 | all | config definition |
+| `config.development.yaml` | 2 | development | contains all necessary information for the development environment |
+| `config.production.yaml` | 2 | production | some minor adjustments for production |
+| `config.local.yaml` | 4 | all | excluded from GIT, every user specific overwrite |
 
 The environment is set by the environment variable `MACPEPDB_ENV`. The default environment is `development`.
 
