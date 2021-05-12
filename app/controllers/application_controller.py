@@ -12,8 +12,6 @@ from macpepdb.tasks.statistics import Statistics
 from app import app, macpepdb_session, config
 
 class ApplicationController:
-    pass
-
     @staticmethod
     @app.errorhandler(404)
     def recourse_not_found(error):
