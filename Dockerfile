@@ -9,7 +9,8 @@ WORKDIR /usr/src/macpepdb_web
 
 COPY . .
 RUN pip install --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt \
+    && pip install pipenv \
+    && pipenv install --system \
     && yarn install \
     && yarn build-prod \
     && rm -r node_modules \

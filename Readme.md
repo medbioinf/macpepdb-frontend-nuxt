@@ -18,30 +18,22 @@ Only necessary for development and non-Docker installation
 ## Development
 ### Prepare development environment
 ```bash
-# Install the correct python version. You can find the needed python version in .python-version at the beginning of the string (.python-version contains the actual name of the python environment).
-# The following command will extract the python version from .python-version for you and install it
-pyenv install $(cat .python-version | awk 'BEGIN { FS = "/" } ; { print $1 }')
+# Install the correct python version
+pyenv install $(cat .python-version)
 
-# Create an environment. The following command will extract the python version and environment name from .python-version for you and install it
-pyenv virtualenv $(cat .python-version | awk 'BEGIN { FS = "/" } ; { print $1 }') $(cat .python-version | awk 'BEGIN { FS = "/" } ; { print $3 }')
-
-# And activate the environment (later pyenv will do it for you if you enter a folder with a .python-version file)
-pyenv activate
-
-# Update pip (to make sure its the newest version)
-pip install --upgrade pip
-
-# Install needed python modules
-pip install -r ./requirements.txt
+# Create an environment
+pipenv install -d
 
 # Install node requirements
 yarn install
+
+
 ```
 Create a `config.local.yaml` (see [Configuration](#Configuration)) and set a local MaCPepDB for developing.
 
 ### Start the app
 ```bash
-honcho start
+pipenv run dev
 ```
 
 ## Configuration
