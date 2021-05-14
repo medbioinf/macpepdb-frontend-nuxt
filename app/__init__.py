@@ -39,7 +39,10 @@ def inject_global_variables():
     )
 
 # Initialize connection pool for MaCPepDB database
-__macpepdb_pool = ThreadedConnectionPool(1, config['macpepdb']['pool_size'], config['macpepdb']['url'])
+# Please use `get_database_connection` to get a database connection which is valid for the current request. It will put back automatically.
+# However, if you want to use a database connection in a generator for streaming, you have to manually get and put back the connection.
+# The best way to deal with it in a generator, is to use a try/catch-block and put the connection back when GeneratorExit is thrown or in the finally-block.
+macpepdb_pool = ThreadedConnectionPool(1, config['macpepdb']['pool_size'], config['macpepdb']['url'])
 
 def get_database_connection():
     """
@@ -47,7 +50,7 @@ def get_database_connection():
     It is automatically returned to the database pool after the requests is finished.
     """
     if "database_connection" not in request_store:
-        request_store.database_connection = __macpepdb_pool.getconn() # pylint: disable=assigning-non-slot
+        request_store.database_connection = macpepdb_pool.getconn() # pylint: disable=assigning-non-slot
     return request_store.database_connection
 
 @app.teardown_appcontext
@@ -57,7 +60,7 @@ def return_database_connection_to_pool(exception=None):
     """
     database_connection = request_store.pop("database_connection", None)
     if database_connection:
-        __macpepdb_pool.putconn(database_connection)
+        macpepdb_pool.putconn(database_connection)
 
 # Import controllers.
 # Do not move this import to the top of the files. Each controller uses 'app' to build the routes.
