@@ -207,7 +207,7 @@ const peptide_search_app_settings = {
                 else
                     throw new ApiError(response)
             }).then(response_data => {
-                this.$store.commit('setMass', response_data.weight);
+                this.$store.commit('setMass', response_data.mass);
             }).catch(error => {
                 if(error instanceof ApiError){
                     if(error.response.status == 422){
