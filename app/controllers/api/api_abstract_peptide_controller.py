@@ -123,7 +123,7 @@ class ApiAbstractPeptideController(ApplicationController):
                             parent_taxonomies = recursive_query.alias()
                             child_taxonomies = Taxonomy.__table__.alias()
                             sub_taxonomies = recursive_query.union_all(select(child_taxonomies.columns).where(child_taxonomies.c.parent_id == parent_taxonomies.c.id))
-                            sub_species_id_query = select([sub_taxonomies.c.id]).where(sub_taxonomies.c.rank == TaxonomyRank.SPECIES)
+                            sub_species_id_query = select([sub_taxonomies.c.id])
 
                             with macpepdb.connect() as connection:
                                 sub_species_ids = [row[0] for row in connection.execute(sub_species_id_query).fetchall()]
