@@ -1,10 +1,13 @@
 import math
+import operator
 
+from typing import List, Iterable
 from flask import jsonify, Response
 
 from macpepdb.proteomics.mass.convert import to_int as mass_to_int, to_float as mass_to_float
 from macpepdb.proteomics.modification import Modification
 from macpepdb.proteomics.modification_collection import ModificationCollection
+from macpepdb.models.column_conditions_list import ColumnConditionsList
 from macpepdb.models.modification_combination_list import ModificationCombinationList, ModificationCombination
 from macpepdb.models.taxonomy import Taxonomy, TaxonomyRank
 from macpepdb.models.peptide import Peptide
@@ -97,8 +100,8 @@ class ApiAbstractPeptideController(ApplicationController):
 
                     peptides_query = f"SELECT DISTINCT <COLUMNS> FROM {Peptide.TABLE_NAME} WHERE mass BETWEEN %s AND %s"
 
-                    # Dict where the key is a peptide column name and the value is a tuple with a operator (string) and a the values.
-                    metadata_conditions = {}
+                    # List of metadata conditions
+                    metadata_conditions = ColumnConditionsList()
                     if "taxonomy_id" in data:
                         if isinstance(data["taxonomy_id"], int):
                             # Recursively select all taxonomies below the given one
@@ -116,23 +119,23 @@ class ApiAbstractPeptideController(ApplicationController):
 
                             with database_connection.cursor() as db_cursor:
                                 db_cursor.execute(recursive_subspecies_id_query, (data["taxonomy_id"], TaxonomyRank.SPECIES.value))
-                                metadata_conditions["taxonomy_ids"] = ("any", [row[0] for row in db_cursor.fetchall()])
+                                metadata_conditions.append("taxonomy_ids", "&& %s::int[]", ApiAbstractPeptideController.is_intersecting, [row[0] for row in db_cursor.fetchall()])
 
                         else:
                             errors.append("taxonomy_id has to be of type int")
 
                     if "proteome_id" in data:
                         if isinstance(data["proteome_id"], str):
-                            metadata_conditions["proteome_ids"] = ("in", data["proteome_id"])
+                            metadata_conditions.append("proteome_ids", "&& %s::int[]", lambda peptide_proteom_ids, proteome_id: proteome_id in peptide_proteom_ids, data["proteome_id"])
                         else:
                             errors.append("proteome_id has to be of type string")
 
                     if "is_reviewed" in data:
                         if isinstance(data["is_reviewed"], bool):
                             if data["is_reviewed"]:
-                                metadata_conditions["is_swiss_prot"] = ("=", True)
+                                metadata_conditions.append("is_swiss_prot", "= %s", operator.eq, True)
                             else:
-                                metadata_conditions["is_trembl"] = ("=", True)
+                                metadata_conditions.append("is_trembl", "= %s", operator.eq, True)
                         else:
                             errors.append("is_reviewed has to be of type boolean")
 
@@ -180,7 +183,7 @@ class ApiAbstractPeptideController(ApplicationController):
             return ApiAbstractPeptideController.generate_txt_response(peptides_query, modification_combination_list, metadata_conditions, offset, limit)
 
     @staticmethod
-    def generate_json_respond(peptides_query: str, modification_combination_list: ModificationCombinationList, metadata_conditions: dict, include_count: bool, offset: int, limit: int):
+    def generate_json_respond(peptides_query: str, modification_combination_list: ModificationCombinationList, metadata_conditions: ColumnConditionsList, include_count: bool, offset: int, limit: int):
         """
         Serialize the given peptides as JSON objects, structure: {'result_key': [peptide_json, ...]}
         @param peptides_query The query for peptides
@@ -201,7 +204,7 @@ class ApiAbstractPeptideController(ApplicationController):
                     # Open a JSON object and peptide array
                     yield b"{\"peptides\":["
                     for modification_combination in modification_combination_list:
-                        query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions.keys())
+                        query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions_list.column_names)
                         finished_query = peptides_query.replace("<COLUMNS>", ", ".join(query_columns))
 
                         db_cursor.execute(finished_query, (modification_combination.precursor_range.lower_limit, modification_combination.precursor_range.upper_limit))
@@ -213,7 +216,7 @@ class ApiAbstractPeptideController(ApplicationController):
                             if not peptides_chunk:
                                 break
                             for peptide_row in peptides_chunk:
-                                if not ApiAbstractPeptideController.check_column_conditions(peptide_row, query_columns, metadata_conditions, modification_combination.column_conditions):
+                                if not ApiAbstractPeptideController.check_column_conditions(peptide_row, query_columns, metadata_conditions, modification_combination.column_conditions_list):
                                     continue
                                 matching_peptide_counter += 1
                                 # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
@@ -241,7 +244,7 @@ class ApiAbstractPeptideController(ApplicationController):
         return Response(generate_json_stream(), content_type=f"{ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]}; charset=utf-8")
 
     @staticmethod
-    def generate_octet_response(peptides_query: str, modification_combination_list: ModificationCombinationList, metadata_conditions: dict, offset: int, limit: int):
+    def generate_octet_response(peptides_query: str, modification_combination_list: ModificationCombinationList, metadata_conditions: ColumnConditionsList, offset: int, limit: int):
         """
         This will generate a stream of JSON-formatted peptides per line. Each JSON-string is bytestring.
         @param peptides_query The query for peptides
@@ -261,7 +264,7 @@ class ApiAbstractPeptideController(ApplicationController):
                     matching_peptide_counter = 0
 
                     for modification_combination in modification_combination_list:
-                        query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions.keys())
+                        query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions_list.column_names)
                         finished_query = peptides_query.replace("<COLUMNS>", ", ".join(query_columns))
 
                         db_cursor.execute(finished_query, (modification_combination.precursor_range.lower_limit, modification_combination.precursor_range.upper_limit))
@@ -273,7 +276,7 @@ class ApiAbstractPeptideController(ApplicationController):
                             if not peptides_chunk:
                                 break
                             for peptide_row in peptides_chunk:
-                                if not ApiAbstractPeptideController.check_column_conditions(peptide_row, query_columns, metadata_conditions, modification_combination.column_conditions):
+                                if not ApiAbstractPeptideController.check_column_conditions(peptide_row, query_columns, metadata_conditions, modification_combination.column_conditions_list):
                                     continue
                                 matching_peptide_counter += 1
                                 # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
@@ -295,7 +298,7 @@ class ApiAbstractPeptideController(ApplicationController):
 
 
     @staticmethod
-    def generate_txt_response(peptides_query: str, modification_combination_list: ModificationCombinationList, metadata_conditions: dict, offset: int, limit: int):
+    def generate_txt_response(peptides_query: str, modification_combination_list: ModificationCombinationList, metadata_conditions: ColumnConditionsList, offset: int, limit: int):
         """
         This will generate a stream of peptides in fasta format.
         @param peptides_query The query for peptides
@@ -315,7 +318,7 @@ class ApiAbstractPeptideController(ApplicationController):
                     matching_peptide_counter = 0
 
                     for modification_combination in modification_combination_list:
-                        query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions.keys())
+                        query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions_list.column_names)
                         finished_query = peptides_query.replace("<COLUMNS>", ", ".join(query_columns))
 
                         db_cursor.execute(finished_query, (modification_combination.precursor_range.lower_limit, modification_combination.precursor_range.upper_limit))
@@ -327,7 +330,7 @@ class ApiAbstractPeptideController(ApplicationController):
                             if not peptides_chunk:
                                 break
                             for peptide_row in peptides_chunk:
-                                if not ApiAbstractPeptideController.check_column_conditions(peptide_row, query_columns, metadata_conditions, modification_combination.column_conditions):
+                                if not ApiAbstractPeptideController.check_column_conditions(peptide_row, query_columns, metadata_conditions, modification_combination.column_conditions_list):
                                     continue
                                 matching_peptide_counter += 1
                                 # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
@@ -358,36 +361,16 @@ class ApiAbstractPeptideController(ApplicationController):
         return Response(generate_txt_stream(), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2])
         
     @staticmethod
-    def check_column_conditions(peptide_row: tuple, column_names: list, metadata_conditions: dict, modification_conditions: dict) -> bool:
+    def check_column_conditions(peptide_row: tuple, column_names: List[str], metadata_conditions: ColumnConditionsList, modification_conditions: ColumnConditionsList) -> bool:
         # Checking metadata columns starting with number_of_missed_cleavages
         for column_idx in range (2, len(ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS)):
             column_name = column_names[column_idx]
-            if column_name in metadata_conditions:
-                operator, condtion_value = metadata_conditions[column_name]
-                if not ApiAbstractPeptideController.execute_column_operator(peptide_row[column_idx], operator, condtion_value):
-                    return False
+            if metadata_conditions.contains_column_name(column_name) and not metadata_conditions.check_column_value(column_name, peptide_row[column_idx]) :
+                return False
         
         for column_idx in range (len(ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS) - 1, len(column_names)):
             column_name = column_names[column_idx]
-            if column_name in modification_conditions:
-                operator, condtion_value = modification_conditions[column_name]
-                if not ApiAbstractPeptideController.execute_column_operator(peptide_row[column_idx], operator, condtion_value):
-                    return False
-        return True
-
-    @staticmethod
-    def execute_column_operator(row_value, operator: str, condition_value) -> bool:
-        if operator == "=":
-            if not row_value == condition_value:
-                return False
-        elif operator == ">=":
-            if not row_value >= condition_value:
-                return False
-        elif operator == "in":
-            if not condition_value in row_value:
-                return False
-        elif operator == "any":
-            if not any(value in condition_value for value in row_value):
+            if modification_conditions.contains_column_name(column_name) and not modification_conditions.check_column_value(column_name, peptide_row[column_idx]) :
                 return False
         return True
 
@@ -427,3 +410,16 @@ class ApiAbstractPeptideController(ApplicationController):
         yield ",".join([f"\"{proteome_id}\"" for proteome_id in peptide_row[8]]).encode()
         # ... close array and peptide object
         yield b"]}"
+
+    @staticmethod
+    def is_intersecting(iterable_x: Iterable, iterable_y: Iterable) -> bool:
+        """Checks if two iterable are intersecting by checking if one element of iterable x is contained by iterable y.
+
+        Arguments:
+        iterable_x -- List with elements
+        iterable_y -- List with elements
+        """
+        for x_element in iterable_x:
+            if x_element in iterable_y:
+                return True
+        return False
