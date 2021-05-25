@@ -206,6 +206,7 @@ class ApiAbstractPeptideController(ApplicationController):
                     written_peptide_counter = 0
                     # Open a JSON object and peptide array
                     yield b"{\"peptides\":["
+                    break_modification_combination_list_loop = False
                     for modification_combination in modification_combination_list:
                         query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions_list.column_names)
                         finished_query = peptides_query.replace("<COLUMNS>", ", ".join(query_columns))
@@ -226,18 +227,20 @@ class ApiAbstractPeptideController(ApplicationController):
                                 written_peptide_counter += 1
                             # Break for-loop if written_peptide_counter reaches the limit and include_count is false. If include_count is true we iterate over all peptide in mass range to count the matching peptides.
                             if written_peptide_counter == limit and not include_count:
+                                break_modification_combination_list_loop = True
                                 break
-                        if not include_count:
-                            # Close array and object
-                            yield b"]}"
-                        else:
-                            # Close array, add key for count
-                            yield b"],\"count\":"
-                            # Add count
-                            yield str(matching_peptide_counter).encode()
-                            # Close object
-                            yield b"}"
-                        break
+                        if break_modification_combination_list_loop:
+                            break
+                    if not include_count:
+                        # Close array and object
+                        yield b"]}"
+                    else:
+                        # Close array, add key for count
+                        yield b"],\"count\":"
+                        # Add count
+                        yield str(matching_peptide_counter).encode()
+                        # Close object
+                        yield b"}"
             finally:
                 macpepdb_pool.putconn(database_connection)
         # Send stream
@@ -265,6 +268,7 @@ class ApiAbstractPeptideController(ApplicationController):
                     # Counter for written peptdes
                     written_peptide_counter = 0
 
+                    break_modification_combination_list_loop = False
                     for modification_combination in modification_combination_list:
                         query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions_list.column_names)
                         finished_query = peptides_query.replace("<COLUMNS>", ", ".join(query_columns))
@@ -285,7 +289,10 @@ class ApiAbstractPeptideController(ApplicationController):
                                 written_peptide_counter += 1
                             # Break for-loop if written_peptide_counter reaches the limit.
                             if written_peptide_counter == limit:
+                                break_modification_combination_list_loop = True
                                 break
+                        if break_modification_combination_list_loop:
+                            break
             finally:
                 macpepdb_pool.putconn(database_connection)
         return Response(generate_octet_stream(), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[1])
@@ -313,6 +320,7 @@ class ApiAbstractPeptideController(ApplicationController):
                     # Counter for written peptdes
                     written_peptide_counter = 0
 
+                    break_modification_combination_list_loop = False
                     for modification_combination in modification_combination_list:
                         query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions_list.column_names)
                         finished_query = peptides_query.replace("<COLUMNS>", ", ".join(query_columns))
@@ -342,7 +350,10 @@ class ApiAbstractPeptideController(ApplicationController):
                                 written_peptide_counter += 1
                             # Break for-loop if written_peptide_counter reaches the limit.
                             if written_peptide_counter == limit:
+                                break_modification_combination_list_loop = True
                                 break
+                        if break_modification_combination_list_loop:
+                            break
             finally:
                 macpepdb_pool.putconn(database_connection)
         return Response(generate_txt_stream(), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2])
