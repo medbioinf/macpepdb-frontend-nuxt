@@ -231,8 +231,12 @@ class ApiAbstractPeptideController(ApplicationController):
                             # Close array and object
                             yield b"]}"
                         else:
-                            # Close array, add count and close object
-                            yield f"],\"count\":{matching_peptide_counter}}}".encode()
+                            # Close array, add key for count
+                            yield b"],\"count\":"
+                            # Add count
+                            yield str(matching_peptide_counter).encode()
+                            # Close object
+                            yield b"}"
                         break
             finally:
                 macpepdb_pool.putconn(database_connection)
