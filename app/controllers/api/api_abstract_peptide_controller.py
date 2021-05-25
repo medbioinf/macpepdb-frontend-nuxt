@@ -11,6 +11,7 @@ from macpepdb.models.column_conditions_list import ColumnConditionsList
 from macpepdb.models.modification_combination_list import ModificationCombinationList, ModificationCombination
 from macpepdb.models.taxonomy import Taxonomy, TaxonomyRank
 from macpepdb.models.peptide import Peptide
+from macpepdb.models.row_stream import RowStream
 
 
 from app import get_database_connection, macpepdb_pool
@@ -197,40 +198,35 @@ class ApiAbstractPeptideController(ApplicationController):
             # In a generator the reponse is already returned and the app context is teared down. So we can not use a database connection from the actual request handling.
             # Get a new one from the pool and return it when the generator ist stopped (GeneratorExit is thrown).
             database_connection = macpepdb_pool.getconn()
-            try:    
-                with database_connection.cursor() as db_cursor:
+            try:
+                with database_connection.cursor() as database_cursor:
                     # Counter for peptides which matches the given filters
                     matching_peptide_counter = 0
+                    # Counter for written peptdes
+                    written_peptide_counter = 0
                     # Open a JSON object and peptide array
                     yield b"{\"peptides\":["
                     for modification_combination in modification_combination_list:
                         query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions_list.column_names)
                         finished_query = peptides_query.replace("<COLUMNS>", ", ".join(query_columns))
+                        column_conditions_list = metadata_conditions + modification_combination.column_conditions_list
 
-                        db_cursor.execute(finished_query, (modification_combination.precursor_range.lower_limit, modification_combination.precursor_range.upper_limit))
-                        written_peptide_counter = 0
-                        while written_peptide_counter < limit or include_count:
-                            # Fetch 10000 peptides
-                            peptides_chunk = db_cursor.fetchmany(10000)
-                            # Stop loop if no results were fetched
-                            if not peptides_chunk:
+                        row_stream = RowStream(database_cursor, finished_query, [modification_combination.precursor_range.lower_limit, modification_combination.precursor_range.upper_limit], query_columns, column_conditions_list)
+                    
+                        for peptide_row in row_stream:
+                            matching_peptide_counter += 1
+                            # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
+                            if matching_peptide_counter > offset and written_peptide_counter < limit:
+                                # Prepend comma if this is not the first returned peptide
+                                if written_peptide_counter > 0 :
+                                    yield b","
+                                for json_chunk in ApiAbstractPeptideController.peptide_row_to_json_generator(peptide_row):
+                                    yield json_chunk
+                                # Increase written peptides
+                                written_peptide_counter += 1
+                            # Break for-loop if written_peptide_counter reaches the limit and include_count is false. If include_count is true we iterate over all peptide in mass range to count the matching peptides.
+                            if written_peptide_counter == limit and not include_count:
                                 break
-                            for peptide_row in peptides_chunk:
-                                if not ApiAbstractPeptideController.check_column_conditions(peptide_row, query_columns, metadata_conditions, modification_combination.column_conditions_list):
-                                    continue
-                                matching_peptide_counter += 1
-                                # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
-                                if matching_peptide_counter > offset and written_peptide_counter < limit:
-                                    # Prepend comma if this is not the first returned peptide
-                                    if written_peptide_counter > 0 :
-                                        yield b","
-                                    for json_chunk in ApiAbstractPeptideController.peptide_row_to_json_generator(peptide_row):
-                                        yield json_chunk
-                                    # Increase written peptides
-                                    written_peptide_counter += 1
-                                # Break for-loop if written_peptide_counter reaches the limit and include_count is false. If include_count is true we iterate over all peptide in mass range to count the matching peptides.
-                                if written_peptide_counter == limit and not include_count:
-                                    break
                         if not include_count:
                             # Close array and object
                             yield b"]}"
@@ -259,39 +255,33 @@ class ApiAbstractPeptideController(ApplicationController):
             # Get a new one from the pool and return it when the generator ist stopped (GeneratorExit is thrown).
             database_connection = macpepdb_pool.getconn()
             try:
-                with database_connection.cursor() as db_cursor:
+                with database_connection.cursor() as database_cursor:
                     # Counter for peptides which matches the given filters
                     matching_peptide_counter = 0
+                    # Counter for written peptdes
+                    written_peptide_counter = 0
 
                     for modification_combination in modification_combination_list:
                         query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions_list.column_names)
                         finished_query = peptides_query.replace("<COLUMNS>", ", ".join(query_columns))
+                        column_conditions_list = metadata_conditions + modification_combination.column_conditions_list
 
-                        db_cursor.execute(finished_query, (modification_combination.precursor_range.lower_limit, modification_combination.precursor_range.upper_limit))
-                        written_peptide_counter = 0
-                        while written_peptide_counter < limit:
-                            # Fetch 10000 peptides
-                            peptides_chunk = db_cursor.fetchmany(10000)
-                            # Stop loop if no results were fetched
-                            if not peptides_chunk:
+                        row_stream = RowStream(database_cursor, finished_query, [modification_combination.precursor_range.lower_limit, modification_combination.precursor_range.upper_limit], query_columns, column_conditions_list)
+
+                        for peptide_row in row_stream:
+                            matching_peptide_counter += 1
+                            # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
+                            if matching_peptide_counter > offset and written_peptide_counter < limit:
+                                # Prepend newline if this is not the first returned peptide
+                                if written_peptide_counter > 0 :
+                                    yield b"\n"
+                                for json_chunk in ApiAbstractPeptideController.peptide_row_to_json_generator(peptide_row):
+                                    yield json_chunk
+                                # Increase written peptides
+                                written_peptide_counter += 1
+                            # Break for-loop if written_peptide_counter reaches the limit.
+                            if written_peptide_counter == limit:
                                 break
-                            for peptide_row in peptides_chunk:
-                                if not ApiAbstractPeptideController.check_column_conditions(peptide_row, query_columns, metadata_conditions, modification_combination.column_conditions_list):
-                                    continue
-                                matching_peptide_counter += 1
-                                # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
-                                if matching_peptide_counter > offset and written_peptide_counter < limit:
-                                    # Prepend newline if this is not the first returned peptide
-                                    if written_peptide_counter > 0 :
-                                        yield b"\n"
-                                    for json_chunk in ApiAbstractPeptideController.peptide_row_to_json_generator(peptide_row):
-                                        yield json_chunk
-                                    # Increase written peptides
-                                    written_peptide_counter += 1
-                                # Break for-loop if written_peptide_counter reaches the limit.
-                                if written_peptide_counter == limit:
-                                    break
-                        break
             finally:
                 macpepdb_pool.putconn(database_connection)
         return Response(generate_octet_stream(), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[1])
@@ -313,66 +303,46 @@ class ApiAbstractPeptideController(ApplicationController):
             # Get a new one from the pool and return it when the generator ist stopped (GeneratorExit is thrown).
             database_connection = macpepdb_pool.getconn()
             try:
-                with database_connection.cursor() as db_cursor:
+                with database_connection.cursor() as database_cursor:
                     # Counter for peptides which matches the given filters
                     matching_peptide_counter = 0
+                    # Counter for written peptdes
+                    written_peptide_counter = 0
 
                     for modification_combination in modification_combination_list:
                         query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions_list.column_names)
                         finished_query = peptides_query.replace("<COLUMNS>", ", ".join(query_columns))
+                        column_conditions_list = metadata_conditions + modification_combination.column_conditions_list
 
-                        db_cursor.execute(finished_query, (modification_combination.precursor_range.lower_limit, modification_combination.precursor_range.upper_limit))
-                        written_peptide_counter = 0
-                        while written_peptide_counter < limit:
-                            # Fetch 10000 peptides
-                            peptides_chunk = db_cursor.fetchmany(10000)
-                            # Stop loop if no results were fetched
-                            if not peptides_chunk:
+                        row_stream = RowStream(database_cursor, finished_query, [modification_combination.precursor_range.lower_limit, modification_combination.precursor_range.upper_limit], query_columns, column_conditions_list)
+                        for peptide_row in row_stream:
+                            matching_peptide_counter += 1
+                            # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
+                            if matching_peptide_counter > offset and written_peptide_counter < limit:
+                                # Prepend semicolon if this is not the first returned peptide
+                                if written_peptide_counter > 0 :
+                                    yield b"\n"
+                                # Begin FASTA entry with '>lcl|' ...
+                                yield b">lcl|"
+                                # ... add mass ...
+                                yield str(peptide_row[0]).encode()
+                                # ... add a underscore ...
+                                yield b"_"
+                                # ... add the sequence to create a unique fasta accession ...
+                                yield peptide_row[1].encode()
+                                # ... add the sequence in chunks of 60 amino acids ...
+                                for chunk_start in range(0, len(peptide_row[1]), 60):
+                                    yield b"\n"
+                                    yield peptide_row[1][chunk_start : chunk_start+60].encode()
+                                # Increase written peptides
+                                written_peptide_counter += 1
+                            # Break for-loop if written_peptide_counter reaches the limit.
+                            if written_peptide_counter == limit:
                                 break
-                            for peptide_row in peptides_chunk:
-                                if not ApiAbstractPeptideController.check_column_conditions(peptide_row, query_columns, metadata_conditions, modification_combination.column_conditions_list):
-                                    continue
-                                matching_peptide_counter += 1
-                                # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
-                                if matching_peptide_counter > offset and written_peptide_counter < limit:
-                                    # Prepend semicolon if this is not the first returned peptide
-                                    if written_peptide_counter > 0 :
-                                        yield b"\n"
-                                    # Begin FASTA entry with '>lcl|' ...
-                                    yield b">lcl|"
-                                    # ... add mass ...
-                                    yield str(peptide_row[0]).encode()
-                                    # ... add a underscore ...
-                                    yield b"_"
-                                    # ... add the sequence to create a unique fasta accession ...
-                                    yield peptide_row[1].encode()
-                                    # ... add the sequence in chunks of 60 amino acids ...
-                                    for chunk_start in range(0, len(peptide_row[1]), 60):
-                                        yield b"\n"
-                                        yield peptide_row[1][chunk_start : chunk_start+60].encode()
-                                    # Increase written peptides
-                                    written_peptide_counter += 1
-                                # Break for-loop if written_peptide_counter reaches the limit.
-                                if written_peptide_counter == limit:
-                                    break
-                        break
             finally:
                 macpepdb_pool.putconn(database_connection)
         return Response(generate_txt_stream(), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2])
         
-    @staticmethod
-    def check_column_conditions(peptide_row: tuple, column_names: List[str], metadata_conditions: ColumnConditionsList, modification_conditions: ColumnConditionsList) -> bool:
-        # Checking metadata columns starting with number_of_missed_cleavages
-        for column_idx in range (2, len(ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS)):
-            column_name = column_names[column_idx]
-            if metadata_conditions.contains_column_name(column_name) and not metadata_conditions.check_column_value(column_name, peptide_row[column_idx]) :
-                return False
-        
-        for column_idx in range (len(ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS) - 1, len(column_names)):
-            column_name = column_names[column_idx]
-            if modification_conditions.contains_column_name(column_name) and not modification_conditions.check_column_value(column_name, peptide_row[column_idx]) :
-                return False
-        return True
 
     @staticmethod
     def peptide_row_to_json_generator(peptide_row: tuple):
