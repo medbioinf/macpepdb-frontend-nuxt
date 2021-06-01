@@ -8,9 +8,7 @@ const protein_accession_search_settings = {
     delimiters: ['[[',']]'],
     data: {
         accession: null,
-        peptide_accession_api_url: "",
-        errors: [],
-        searching: false
+        peptide_accession_api_url: ""
     },
     mounted(){
         this.peptide_accession_api_url = this.$el.getAttribute("action");
@@ -19,41 +17,7 @@ const protein_accession_search_settings = {
         search(event = null){
             // Prevent default execution
             if(event) event.preventDefault();
-            // Stop search execution if search is already running
-            if(this.searching) return;
-            this.errors = [];
-            if(this.accession){
-                this.searching = true;
-                fetch(this.peptide_accession_api_url.replace("ACCESSION", encodeURIComponent(this.accession)), {
-                    cache: 'no-cache',
-                }).then(response => {
-                    if(response.ok)
-                        return response.json()
-                    else
-                        throw new ApiError(response)
-                }).then(response_data => {
-                    // Remove the accession so on histoy back (browser back) the input file is empty as well
-                    this.accession = null;
-                    window.location.href = response_data.url;
-                }).catch(error => {
-                    if(error instanceof ApiError){
-                        if(error.response.status == 422){
-                            error.response.json().then(response_data => {
-                                this.errors = response_data.errors;
-                            });
-                        } else {
-                            this.errors = [error.response.statusText];
-                        }
-                    } else {
-                        this.errors = ["something unusual has happend, please try again later"];
-                    }
-                })
-                .finally(() => {
-                    this.searching = false;
-                });
-            } else {
-                this.errors = ["please enter an accession"]
-            }
+            window.location.href = this.peptide_accession_api_url.replace("ACCESSION", this.accession)
         }
     }
 }
