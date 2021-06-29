@@ -1,21 +1,26 @@
 # MaCPepDB Web
-MaCPepDB is a web frontend for the database created with MaCPepDB.
+MaCPepDB is a web interface for the database created with MaCPepDB.
 
 ## Dependencies
-Only necessary for development and non-Docker installation
-* GIT
 * Build tools (Ubuntu: `build-essential`, Arch Linux: `base-devel`)
 * C/C++-header for PostgreSQL (Ubuntu: `libpq-dev`, Arch Linux: `postgresql-libs`)
 * C/C++-headers for libev (Ubuntu: `libev-dev`, Arch Linux: `libev`)
 * Rust Compiler
-* Docker & Docker Compose
+* Docker
 * Python 3.x
 * [pyenv](https://github.com/pyenv/pyenv)
+* [pipenv](https://pipenv.pypa.io/en/latest/)
 * NodeJS 14.x
 * yarn
 
+### For development only
+* GIT
+* Docker Compose
 
 ## Development
+MaCPepDB Web consists of two parts.
+1. `macpepdb_web_backend` - A [Flask](https://flask.palletsprojects.com/en/2.0.x/) web application, providing the API endpoints.
+2. `macpepdb_web_frontend` - A [NuxtJS](https://nuxtjs.org/) application, providing the web pages.
 ### Prepare development environment
 ```bash
 # Install the correct python version
@@ -25,55 +30,64 @@ pyenv install $(cat .python-version)
 pipenv install -d
 
 # Install node requirements
-yarn install
+yarn --cwd ./macpepdb_web_frontend install
 
 
 ```
-Create a `config.local.yaml` (see [Configuration](#Configuration)) and set a local MaCPepDB for developing.
+Create a `config.local.yaml` (see [Configuration](#backend-configuration)) and set a local MaCPepDB for development.
 
 ### Start the app
 ```bash
 pipenv run dev
 ```
+The frontend can than be accessed on port `http://localhost:5000` and the API on `localhost:3000`.   
+For development, Flask is configured to add CORS-Headers by default.
 
 ## Configuration
-The Configuration is split into multiple files which for different environments:
+### Backend configuration
+The configuration for the backend is split into multiple files for different environments:
 | file | read order | environment | purpose |
 | --- | --- | --- | --- |
 | `config.yaml` | 1 | all | config definition |
 | `config.development.yaml` | 2 | development | contains all necessary information for the development environment |
 | `config.production.yaml` | 2 | production | some minor adjustments for production |
-| `config.local.yaml` | 4 | all | excluded from GIT, every user specific overwrite |
+| `config.local.yaml` | 4 | all | excluded from GIT, serves as user specific overwrite |
 
 The environment is set by the environment variable `MACPEPDB_ENV`. The default environment is `development`.
 
-You can overwrite some configuration variables and the environment with CLI arguments. For more information run `python ./run.py --help`
+You can overwrite some configuration variables and the environment with CLI arguments. For more information run `pipenv run python -m macpepdb_web_backend --help`
 
+### Frontend configuration
+The frontend is configured by 3 environment variables:
+| variable | default | description |
+| --- | --- | --- |
+| MACPEPDB_BACKEND_BASE_URL | `http://localhost:3000` | Base URL for the backend (no trailing slash, must be accessible for the internet browser) |
+| MACPEPDB_FRONTEND_INTERFACE | `127.0.0.1` | IP for the frontend |
+| MACPEPDB_FRONTEND_PORT | `5000` | Port of the frontend |
 ## Production
-First create a local configuration file by copying `config.yaml` to `config.local.yaml` and adjust it to your needs. You have then two options to run the app:
+You have two options to run the app:
 * [Native deployment](#native-deployment)
 * [Docker deployment](#docker-deployment)
 
-In both cases make sure PostgreSQL is running before you start the app.
-
-It is also recommended to use a reverse proxy like NginX to apply encryption with SSL or network rules.
-
-Note: Each app start will create exactly one process to handle incoming requests. To create a high available application start the app multiple times and use NginX as reverse proxy with its build in load balancer. It is important, that all processes have access to the same upload directory and database for consistent data. Take a look into the `docker-compose.yaml` and `nginx-high-available.conf` for more information.
-
 ### Native deployment
-If you run the application on a bare metal machine, it is recommended to set up a virtual environment with all necessary dependencies. You can follow the development instruction to create one. Then run `python ./run.py --environment production` or `MACPEPDB_ENV=production python ./run.py`
+1. Clone the project
+2. Create a configuration by copying `config.yaml` to `config.local` and adjust it to your needs.
+3. Create a virtual Python environment by running `pipenv install`
+4. Start the backend with `pipenv run python -m macpepdb_web_backend`
+5. Prepare the frontend dependencies `yarn --cwd ./macpepdb_web_frontend install`
+6. Prepare the frontend `yarn --cwd ./macpepdb_web_frontend build`
+7. Start the frontend `yarn --cwd ./macpepdb_web_frontend start`
 
 ### Docker deployment
-First build an image of your configured application with: `docker build --tag="<YOUR_CONTAINER_TAG>" ./`   
-Than you can start a container from the new image with:
-```bash
-    docker run -d --name="<SOME_NAME>" \
-    -p <HOST_PORT>:80 \
-    <YOUR_CONTAINER_TAG>
-```
-You can also prepend arguements for the CLI.
+1. Clone the project
+2. Create a configuration by copying `config.yaml` to `config.local` and adjust it to your needs.
+3. Build the frontend image `docker build --tag="mpc/macpepdb-web-backend:<some-version-tag>" -f backend.dockerfile .`
+4. Build the backend image `docker build --tag="mpc/macpepdb-web-frontend:<some-version-tag>" -f frontend.dockerfile .`
+5. Start the backend container `docker run -d -it --name="macpepdb-web-backend" -p <host-port>:<container-port> mpc/macpepdb-web-backend:<some-version-tag>` (you can also add CLI arguments for the backend)
+6. Start the frontend container `docker run -d -it --name="macpepdb-web-frontend" -p <host-port>:<container-port> mpc/macpepdb-web-frontend:<some-version-tag>`
 
-If you run this container with other containers like NginX, RabbitMQ or PostgreSQL on the same host, make sure they are accessible on the same, non-default docker network.
+### Make it available over a single domain and scale it up
+It is recommended to use a reverse proxy like NginX to serve the frontend and backend over a single domain. Have look at `nginx-high-available.conf` how to set it up.  
+`nginx-high-available.conf` is also configured to splitup and distribute incoming requests to the backend to three seperate backend instances. While the first process is only used to serve fast requests, the second and third instances are used for more complex search operation. Each upstream block can be scaled up by providing more backend instances.
 
-You can use [bind mounts](https://docs.docker.com/storage/bind-mounts/) persist the uploaded files and make them available to the host.   
-With a bind mount it is also very easy to adjust the configuration without rebuilding the image by mounting a new `config.local.yaml` to `/usr/src/max-decoy-cloud-hq/config.local.yaml`.
+Note: `nginx-high-available.conf` is used for the provided `docker-compose.yaml` therefor the frontend/backend "servers" are named after their containers (`frontend` & `backend_1` to `backend_3`). 

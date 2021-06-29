@@ -1,2 +1,2 @@
-webpack: yarn run watch-build
-flask: echo "0" > app/static/bundle/buildtime.txt && python run.py
+frontend: cd macpepdb_web_frontend && yarn dev
+backend: python -m macpepdb_web_backend

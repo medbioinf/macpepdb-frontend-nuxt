@@ -12,10 +12,6 @@ config.local.yaml
 # npm
 node_modules/
 
-# assets
-/app/static/bundle/*
-!/app/static/bundle/.keep
-
 # Copy from https://github.com/github/gitignore/blob/master/Python.gitignore with some additions
 # Byte-compiled / optimized / DLL files
 __pycache__/

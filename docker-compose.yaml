@@ -1,54 +1,41 @@
 version: '3'
 services:
-  flask_1:
+  backend_1: &backend
     build:
       context: .
+      dockerfile: backend.dockerfile
     volumes:
-      - ./config.docker-compose.yaml:/usr/src/macpepdb_web/config.development.yaml:ro
-      - ./config.local.yaml:/usr/src/macpepdb_web/config.local.yaml:ro
-    #user: "${UID}:${GID}"
+      # Pass the local config
+      - ./config.yaml:/app/config.yaml:ro
+      - ./config.development.yaml:/app/config.development.yaml:ro
+      - ./config.local.yaml:/app/config.local.yaml:ro
+    # user: "${UID}:${GID}"
+    command: ["--environment", "development", "--interface", "0.0.0.0", "--port", "3001"]
+  backend_2: *backend
+  backend_3: *backend
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.dockerfile
     environment:
-      # Sets the environment for alembic, because it does not know the CLI of the HQ
-      MACPEPDB_ENV: development
-      # This tells this container to run the database migrations. Make sure only one container runs the migration and that MACPEPDB_ENV is set for alembic
-      RUN_MIGRATIONS: "true"
-    command: ["--environment", "development"]
-    depends_on:
-      - psql
-      - rabbitmq
-  flask_2:
-    build:
-      context: .
-    volumes:
-      - ./config.docker-compose.yaml:/usr/src/macpepdb_web/config.development.yaml:ro
-      - ./config.local.yaml:/usr/src/macpepdb_web/config.local.yaml:ro
+      MACPEPDB_BACKEND_BASE_URL: http://localhost:8080
+      MACPEPDB_FRONTEND_INTERFACE: 0.0.0.0
+      MACPEPDB_FRONTEND_PORT: 3000
     #user: "${UID}:${GID}"
     command: ["--environment", "development"]
-    depends_on:
-      - psql
-      - rabbitmq
-  flask_3:
-    build:
-      context: .
-    volumes:
-      - ./config.docker-compose.yaml:/usr/src/macpepdb_web/config.development.yaml:ro
-      - ./config.local.yaml:/usr/src/macpepdb_web/config.local.yaml:ro
-    #user: "${UID}:${GID}"
-    command: ["--environment", "development"]
-    depends_on:
-      - psql
-      - rabbitmq
   nginx:
-    image: nginx:1.19.2-alpine
+    image: nginx:stable-alpine
     ports:
-      - 3000:3000
+      - 8080:8080
     volumes:
-      - ./nginx-high-available.conf:/etc/nginx/conf.d/mdc-hq.conf:ro
+      - ./nginx-high-available.conf:/etc/nginx/templates/default.conf.template:ro
     depends_on:
-      - flask_1
-      - flask_2
-      - flask_3
+      - backend_1
+      - backend_2
+      - backend_3
+      - frontend
     links:
-      - flask_1
-      - flask_2
-      - flask_3
+      - backend_1
+      - backend_2
+      - backend_3
+      - frontend

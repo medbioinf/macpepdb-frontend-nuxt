@@ -10,6 +10,7 @@ Readme.md
 !/app/static/bundle/.keep
 Procfile
 yarn-error.log
+.nuxt/
 
 # node modules
 node_modules/
