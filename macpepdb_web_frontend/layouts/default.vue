@@ -1,6 +1,6 @@
 <template>
-    <main class="container-fluid vw-100 vh-100 mr-0">
-        <div class="row h-100 application-content-row flex-row flex-lg-column">
+    <main class="container-fluid mr-0">
+        <div class="row application-content-row">
             <nav :class="{'extended-menu': show_menu}" class="col-12 col-lg-2 position-sticky d-flex flex-column py-3 application-nav-column collapsed-menu">
                 <div class="d-flex justify-content-between align-items-center">
                     <h1 class="brand text-break">

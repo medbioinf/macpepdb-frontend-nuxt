@@ -22,14 +22,10 @@ $application-menu-transition-time: .5s
     
 
     .application-menu
-        // collapsed menu
-        height: 0
-        overflow: hidden
+        @include media-breakpoint-down(lg)
+            height: 100vh
+            display: none !important
 
-        // do not collapse on breakpoint medium and up
-        @include media-breakpoint-up(lg)
-            transform: unset
-            overflow: unset
 
         .application-menu-label
             border-top: 3px solid $rub-green
@@ -49,14 +45,9 @@ $application-menu-transition-time: .5s
 
     &.extended-menu
         height: 100vh
-        // extended menu
+
         .application-menu
-            height: unset
-            overflow: unset
-
-
-.application-content-row
-    overflow-y: auto
+            display: flex !important
 
 h1
     color: $rub-blue

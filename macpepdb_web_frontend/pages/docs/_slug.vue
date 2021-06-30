@@ -5,7 +5,7 @@
         <nav>
             <ul>
                 <li v-for="link of article.toc" :key="link.id">
-                    <NuxtLink :to="`#${link.id}`" @click.native="scrollTo(`#${link.id}`)">{{ link.text }}</NuxtLink>
+                    <NuxtLink :to="`#${link.id}`">{{ link.text }}</NuxtLink>
                 </li>
             </ul>
         </nav>
@@ -20,11 +20,6 @@ export default {
     async asyncData({ $content, params }) {
         const article = await $content('docs', params.slug).fetch()
         return { article }
-    },
-    methods: {
-        scrollTo(anchor){
-            location.hash = anchor
-        }
     }
 }
 </script>
