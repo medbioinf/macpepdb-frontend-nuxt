@@ -1,4 +1,6 @@
 import json
+import traceback
+from logging import error
 
 from flask import Flask, g as request_store
 from flask.json import jsonify
@@ -79,6 +81,7 @@ def handle_exception(e):
             mimetype='application/json'
         )
     if config['debug']:
+        app.logger.error(traceback.format_exc())
         response = add_cors_header(response)
     return response
 
