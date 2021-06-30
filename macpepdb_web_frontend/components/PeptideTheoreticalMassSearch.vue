@@ -72,9 +72,19 @@
 
         <div class="peptides">
             <div v-if="results.peptides">
-                <p class="mb-0">
-                    Found {{ results.total_count }} peptide(s).
-                </p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <p class="mb-0">
+                        Found {{ results.total_count }} peptide(s).
+                    </p>
+                    <!-- File downloads with JS is a bit tricky and not very elegant. For the CSV download we use a classic form and put the search parameter as JSON-string into a hidden input field --> 
+                    <form v-if="results.peptides.length" :action="`${this.$config.macpepdb_backend_base_url}/api/peptides/search.csv`" method="post">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            download as CSV (Excel compatible)
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <input :value="download_search_params" name="search_params" type="hidden">
+                    </form>
+                </div>
                 <table class="table">
                     <thead>
                         <tr>
@@ -149,6 +159,7 @@ export default {
                 is_reviewed: null,
             },
             is_searching: false,
+            is_downloading: false,
             last_search_parameter: "",
             errors: {},
             // Results
@@ -176,22 +187,6 @@ export default {
         this.local_event_bus.$on("PAGE_CHANGED", page => this.goToPage(page))
     },
     methods: {
-        buildSearchData(){
-            var data = {
-                precursor: this.search_params.mass,
-                modifications: this.search_params.modifications,
-                lower_precursor_tolerance_ppm: Number.isInteger(this.search_params.mass_tolerance.lower) ? this.search_params.mass_tolerance.lower : 0,
-                upper_precursor_tolerance_ppm: Number.isInteger(this.search_params.mass_tolerance.upper) ? this.search_params.mass_tolerance.upper : 0,
-                variable_modification_maximum: Number.isInteger(this.search_params.max_variable_modifications) ? this.search_params.max_variable_modifications : 0,
-                limit: this.peptides_per_page,
-                offset: this.peptides_per_page * (this.current_result_page - 1),    // page is satrts at 1
-                order_by: this.search_params.order.by,
-                order_direction: this.search_params.order.direction
-            }
-            if(this.search_params.taxonomy_id) data['taxonomy_id'] = this.search_params.taxonomy_id
-            if(this.search_params.is_reviewed != null) data['is_reviewed'] = this.search_params.is_reviewed
-            return data
-        },
         areSearchParameterTheSameAsBefore(current_search_request_body){
             var body_copy = {...current_search_request_body}
             delete body_copy.limit
@@ -205,7 +200,7 @@ export default {
         },
         search(){
             this.is_searching = true
-            var request_body = this.buildSearchData()
+            var request_body = {...this.search_request_body}
             // Reset the results and request the count if the search parameters differ from the one before and no errors occured during the last search, then reset the results and request the count
             var is_same_search = this.areSearchParameterTheSameAsBefore(request_body)
             if(!is_same_search){
@@ -244,6 +239,11 @@ export default {
                 this.is_searching = false
             })
         },
+        getFileNameFromContentDispostionHeader(header, fallback){
+                var filename_reg = /filename=(?<filename>[\w\.]+)(;|\b|$)/
+                var matches = header.match(filename_reg)
+                return matches.groups.filename || fallback
+        },
         goToPage(page){
             this.current_result_page = page
             this.search()
@@ -255,6 +255,28 @@ export default {
     computed: {
         peptides_per_page(){
             return PEPTIDES_PER_PAGE
+        },
+        search_request_body(){
+            var data = {
+                precursor: this.search_params.mass,
+                modifications: this.search_params.modifications,
+                lower_precursor_tolerance_ppm: Number.isInteger(this.search_params.mass_tolerance.lower) ? this.search_params.mass_tolerance.lower : 0,
+                upper_precursor_tolerance_ppm: Number.isInteger(this.search_params.mass_tolerance.upper) ? this.search_params.mass_tolerance.upper : 0,
+                variable_modification_maximum: Number.isInteger(this.search_params.max_variable_modifications) ? this.search_params.max_variable_modifications : 0,
+                limit: this.peptides_per_page,
+                offset: this.peptides_per_page * (this.current_result_page - 1),    // page is satrts at 1
+                order_by: this.search_params.order.by,
+                order_direction: this.search_params.order.direction
+            }
+            if(this.search_params.taxonomy_id) data['taxonomy_id'] = this.search_params.taxonomy_id
+            if(this.search_params.is_reviewed != null) data['is_reviewed'] = this.search_params.is_reviewed
+            return data
+        },
+        download_search_params(){
+            var request_body = {...this.search_request_body}
+            delete request_body.offset
+            delete request_body.limit
+            return JSON.stringify(request_body)
         }
     },
     watch: {

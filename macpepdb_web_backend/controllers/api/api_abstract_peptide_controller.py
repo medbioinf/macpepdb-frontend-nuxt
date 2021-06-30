@@ -1,3 +1,4 @@
+import json
 import math
 import operator
 
@@ -19,7 +20,7 @@ from macpepdb_web_backend import get_database_connection, macpepdb_pool
 from macpepdb_web_backend.controllers.application_controller import ApplicationController
 
 class ApiAbstractPeptideController(ApplicationController):
-    SUPPORTED_OUTPUTS = ['application/json', 'application/octet-stream', 'text/plain']
+    SUPPORTED_OUTPUTS = ['application/json', 'application/octet-stream', 'text/plain', 'text/csv']
     SUPPORTED_ORDER_COLUMNS = ['mass', 'length', 'sequence', 'number_of_missed_cleavages']
     SUPPORTED_ORDER_DIRECTIONS = ['asc', 'desc']
     FASTA_SEQUENCE_LEN = 60
@@ -27,9 +28,14 @@ class ApiAbstractPeptideController(ApplicationController):
     PEPTIDE_QUERY_DEFAULT_COLUMNS = ["mass", "sequence", "number_of_missed_cleavages", "length", "is_swiss_prot", "is_trembl", "taxonomy_ids", "unique_taxonomy_ids", "proteome_ids"]
 
     @staticmethod
-    def _search(request):
+    def _search(request, file_extension: str):
         errors = defaultdict(list)
-        data = request.get_json()
+        data = None
+        if request.headers.get("Content-Type", "") == "application/json":
+            data = request.get_json()
+        elif request.headers.get("Content-Type", "") == "application/x-www-form-urlencoded":
+            # For use with classical form-tag. The JSON-formatted search parameters should be provided in the form parameter "search_params"
+            data = json.loads(request.form.get("search_params", "{}"))
 
         include_count = False
         if 'include_count' in data and isinstance(data['include_count'], bool):
@@ -46,9 +52,23 @@ class ApiAbstractPeptideController(ApplicationController):
         if 'order_direction' in data:
             if not isinstance(data['order_direction'], str) or not data['order_direction'] in ApiAbstractPeptideController.SUPPORTED_ORDER_DIRECTIONS:
                 errors["order_direction"].append(f"'order_direction' must be a string with one of following values: {', '.join(ApiAbstractPeptideController.SUPPORTED_ORDER_DIRECTIONS)}")
+            
 
-        # Get accept header (default 'application/json'), split by ',' in case multiple mime types where supported and take the first one
-        output_style = request.headers.get('accept', default=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]).split(',')[0].strip()
+        output_style = None
+        # Use file extension to select output format.
+        if file_extension == "json":
+            output_style = ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]
+        elif file_extension == "stream":
+            output_style = ApiAbstractPeptideController.SUPPORTED_OUTPUTS[1]
+        elif file_extension == "txt":
+            output_style = ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]
+        elif file_extension == "csv":
+            output_style = ApiAbstractPeptideController.SUPPORTED_OUTPUTS[3]
+        else:
+            # If no file extension is given, accept header is used to select the output format
+            # Get accept header (default 'application/json'), split by ',' in case multiple mime types where supported and take the first one
+            output_style = request.headers.get('accept', default=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]).split(',')[0].strip()
+
         # If the mime type is not supported set default one
         if not output_style in ApiAbstractPeptideController.SUPPORTED_OUTPUTS:
             output_style = ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]
@@ -183,6 +203,8 @@ class ApiAbstractPeptideController(ApplicationController):
             return ApiAbstractPeptideController.generate_octet_response(peptides_query, modification_combination_list, metadata_conditions, offset, limit)
         elif output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
             return ApiAbstractPeptideController.generate_txt_response(peptides_query, modification_combination_list, metadata_conditions, offset, limit)
+        elif output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[3]:
+            return ApiAbstractPeptideController.generate_csv_response(peptides_query, modification_combination_list, metadata_conditions, offset, limit)
 
     @staticmethod
     def generate_json_respond(peptides_query: str, modification_combination_list: ModificationCombinationList, metadata_conditions: ColumnConditionsList, include_count: bool, offset: int, limit: int):
@@ -356,6 +378,71 @@ class ApiAbstractPeptideController(ApplicationController):
                 macpepdb_pool.putconn(database_connection)
         return Response(generate_txt_stream(), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2])
         
+
+    @staticmethod
+    def generate_csv_response(peptides_query: str, modification_combination_list: ModificationCombinationList, metadata_conditions: ColumnConditionsList, offset: int, limit: int):
+        """
+        This will generate a stream of peptides in fasta format.
+        @param peptides_query The query for peptides
+        @param modification_combination_list List of modification combinations to match
+        @param metadata_conditions Conditions for metadata
+        @param include_count Boolean to include count in the results, e.g. {'count': 0, 'peptides': [{'sequence': 'PEPTIDER', ...}, ...]}
+        @param offset Result offset
+        @param limit Result limit
+            """
+        def generate_csv_stream():
+            # In a generator the reponse is already returned and the app context is teared down. So we can not use a database connection from the actual request handling.
+            # Get a new one from the pool and return it when the generator ist stopped (GeneratorExit is thrown).
+            database_connection = macpepdb_pool.getconn()
+            try:
+                # Counter for peptides which matches the given filters
+                matching_peptide_counter = 0
+                # Counter for written peptdes
+                written_peptide_counter = 0
+
+                # Write header to stream
+                yield b"\"mass\",\"sequence\",\"in_swiss_prot\",\"in_trembl\",\"taxonomy_ids\",\"unique_for_taxonomy_ids\",\"proteome_ids\""
+
+
+                break_modification_combination_list_loop = False
+                for modification_combination in modification_combination_list:
+                    query_columns = ApiAbstractPeptideController.PEPTIDE_QUERY_DEFAULT_COLUMNS + list(modification_combination.column_conditions_list.column_names)
+                    finished_query = peptides_query.replace("<COLUMNS>", ", ".join(query_columns))
+                    column_conditions_list = metadata_conditions + modification_combination.column_conditions_list
+
+                    row_stream = RowStream(database_connection, finished_query, [modification_combination.precursor_range.lower_limit, modification_combination.precursor_range.upper_limit], query_columns, column_conditions_list)
+                    for peptide_row in row_stream:
+                        matching_peptide_counter += 1
+                        # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
+                        if matching_peptide_counter > offset and written_peptide_counter < limit:
+                            yield b"\n"
+                            yield str(mass_to_float(peptide_row[0])).encode()
+                            # At this point only string values are added to the cssv, so we quote them for better compatibility
+                            yield b",\""
+                            yield peptide_row[1].encode()
+                            yield b"\",\""
+                            yield b"true" if peptide_row[4] else b"false"
+                            yield b"\",\""
+                            yield b"true" if peptide_row[5] else b"false"
+                            yield b"\",\""
+                            yield ",".join([str(taxonomy_id) for taxonomy_id in peptide_row[6]]).encode()
+                            yield b"\",\""
+                            yield ",".join([str(taxonomy_id) for taxonomy_id in peptide_row[7]]).encode()
+                            yield b"\",\""
+                            yield ",".join([f"{proteome_id}" for proteome_id in peptide_row[8]]).encode()
+                            yield b"\""
+                            # Increase written peptides
+                            written_peptide_counter += 1
+                        # Break for-loop if written_peptide_counter reaches the limit.
+                        if written_peptide_counter == limit:
+                            break_modification_combination_list_loop = True
+                            break
+                    if break_modification_combination_list_loop:
+                        break
+            finally:
+                macpepdb_pool.putconn(database_connection)
+        return Response(generate_csv_stream(), mimetype=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[3], headers = {"Content-Disposition": "attachment; filename=macpepdb_peptide.csv"})
+    
 
     @staticmethod
     def peptide_row_to_json_generator(peptide_row: tuple):

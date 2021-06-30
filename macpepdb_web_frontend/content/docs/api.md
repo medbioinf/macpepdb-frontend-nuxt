@@ -125,12 +125,14 @@ To get the parent proteins as well, add the parameter `include_proteins` with va
 
 ### Search by mass
 #### url
-`http://localhost/api/peptides/search`    
+`http://localhost/api/peptides/search`   
+or
+`http://localhost/api/peptides/search.(json|stream|txt|csv)`   
 #### method
 `POST`    
 #### additional headers
 * Content-Type: application/json
-* Accept: `application/json`, `application/octet-stream` or `text/plain` (This controlls the output, see below. `application/json` is the default and is used for unknown accept-formats)
+* Accept: `application/json`, `application/octet-stream`, `text/plain`  or `text/csv` (This controlls the output, see below. `application/json` is the default and is used for unknown accept-formats)
 
 #### body (JSON) 
 keys:
@@ -153,6 +155,18 @@ keys:
 * order_descendent: bool, default: false, optional
 
 If `taxonomy_id`, `proteome_id`, `is_reviewed` are used together they will concanted with `and`.
+
+#### body (Form) 
+The search parameter can also be submitted as content type `application/x-www-form-urlencoded`. In this case provide the parameters as JSON-string in a form parameter called `search_params`.
+
+#### output format
+The output format can also be changed by prepanding a file extension
+| file extension | output format |
+| --- | --- |
+| `json` | `application/json` |
+| `stream` | `application/octet-stream` |
+| `txt` | `text/plain` |
+| `csv` | `text/csv` | 
 
 example:
 ```json
@@ -278,6 +292,8 @@ Bytestream which contains one peptide in JSON-format per line.
 {"mass":859.494958414,"sequence":"TVMVVVGR","is_swiss_prot":true,"is_trembl":true,"taxonomy_ids":[48701,173247,...],"unique_taxonomy_ids":[48701,64144,...],"proteome_ids":["UP000053641","UP000264800",...]}
 {"mass":859.498798203,"sequence":"RSSRQVK","is_swiss_prot":true,"is_trembl":true,"taxonomy_ids":[1608454,586833,...],"unique_taxonomy_ids":[60296,41447,...],"proteome_ids":["UP000504639","UP000265160",...]}
 {"mass":859.498798203,"sequence":"SSRQVKR","is_swiss_prot":true,"is_trembl":true,"taxonomy_ids":[1608454,586833,...],"unique_taxonomy_ids":[60296,41447,...],"proteome_ids":["UP000504639","UP000265160",...]}
+```
+
 #### output (text/plain))
 Text stream in fasta format.
 ```
@@ -291,8 +307,18 @@ RSSRQVK
 SSRQVKR
 ```
 
+#### output (application/octet-stream)
+```
+"mass","sequence","in_swiss_prot","in_trembl","taxonomy_ids","unique_for_taxonomy_ids","proteome_ids"
+859.491587572,"AAFPQKKA","false","true","61819,8014","8014","None,UP000261340"
+859.491587572,"AAFQPKAK","true","true","10090,230844,56216,10089,10116,10036","56216,10089,10116,10036","UP000000589,UP000515126,UP000092124,UP000504601,UP000189706,UP000002494"
+859.491587572,"AAKKWEK","false","true","48278","48278","UP000559068"
+859.491587572,"AAKWKEK","false","true","545262,205130","545262,205130","UP000557230,UP000261640"
+859.491587572,"AAWEKKK","false","true","176057","176057","UP000053840"
+```
+
 ### Calculate theoretical mass
-#### url
+####
 `http://localhost/api/peptides/mass/<SEQUENCE>`
 #### additional headers
 * Content-Type: application/json
