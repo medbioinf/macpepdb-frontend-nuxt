@@ -11,7 +11,7 @@ from werkzeug.exceptions import HTTPException
 from macpepdb.proteomics.mass.convert import to_float as mass_to_float
 
 from macpepdb_web_backend.utility.configuration import Configuration
-from macpepdb_web_backend.utility.header import add_cors_header
+from macpepdb_web_backend.utility.headers.cross_origin_resource_sharing import add_allow_cors_headers
 
 config, env = Configuration.get_config_and_env()
 
@@ -82,13 +82,13 @@ def handle_exception(e):
         )
     if config['debug']:
         app.logger.error(traceback.format_exc())
-        response = add_cors_header(response)
+        response = add_allow_cors_headers(response)
     return response
 
 if config['debug']:
     @app.after_request
     def add_cors_header_in_development_mode(response):
-        return add_cors_header(response)
+        return add_allow_cors_headers(response)
 
 
 # Import controllers.

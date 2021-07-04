@@ -1,4 +1,4 @@
-def add_cors_header(response):
+def add_allow_cors_headers(response):
     """
     Adds CORS headers
     """
