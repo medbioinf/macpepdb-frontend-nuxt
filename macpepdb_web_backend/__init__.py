@@ -2,9 +2,10 @@ import json
 import traceback
 from logging import error
 
-from flask import Flask, g as request_store
+from flask import Flask, g as request_store, request
 from flask.json import jsonify
 from psycopg2.pool import ThreadedConnectionPool
+from threading import Thread
 from werkzeug.exceptions import HTTPException
 
 
@@ -12,6 +13,7 @@ from macpepdb.proteomics.mass.convert import to_float as mass_to_float
 
 from macpepdb_web_backend.utility.configuration import Configuration
 from macpepdb_web_backend.utility.headers.cross_origin_resource_sharing import add_allow_cors_headers
+from macpepdb_web_backend.utility.matomo import track_request as matomo_track_request
 
 config, env = Configuration.get_config_and_env()
 
@@ -46,6 +48,27 @@ def get_database_connection():
         request_store.database_connection = macpepdb_pool.getconn() # pylint: disable=assigning-non-slot
     return request_store.database_connection
 
+@app.before_request
+def track_request():
+    if config["matomo"]["enabled"]:
+        track_thread = Thread(target=matomo_track_request, args=(
+            request.headers.get("User-Agent", ""),
+            request.remote_addr,
+            request.headers.get("Referer", ""),
+            request.headers.get("Accept-Language", ""),
+            request.headers.get("Host", ""),
+            request.full_path,
+            request.query_string,
+            request.url.startswith("https"),
+            config["matomo"]["url"],
+            config["matomo"]["site_id"],
+            config["matomo"]["auth_token"], 
+            app,
+            config["debug"]
+        ))
+        track_thread.start()
+        request_store.track_thread = track_thread 
+
 @app.teardown_appcontext
 def return_database_connection_to_pool(exception=None):
     """
@@ -54,6 +77,12 @@ def return_database_connection_to_pool(exception=None):
     database_connection = request_store.pop("database_connection", None)
     if database_connection:
         macpepdb_pool.putconn(database_connection)
+
+@app.teardown_appcontext
+def wait_for_track_request(exception=None):
+    track_thread = request_store.pop("track_thread", None)
+    if track_thread:
+        track_thread.join()
 
 @app.errorhandler(Exception)
 def handle_exception(e):

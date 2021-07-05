@@ -14,3 +14,9 @@ macpepdb:
   url: "postgresql://user:password@host:port/database"
   # Number of connections
   pool_size: 1 # Bjoern (the application server) is single threaded, so it is useless to support more then one connection
+matomo:
+  enabled: false
+  url: ""
+  site_id: 1
+  auth_token: ""
+
