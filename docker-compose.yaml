@@ -6,7 +6,6 @@ services:
       dockerfile: backend.dockerfile
     volumes:
       # Pass the local config
-      - ./config.yaml:/app/config.yaml:ro
       - ./config.development.yaml:/app/config.development.yaml:ro
       - ./config.local.yaml:/app/config.local.yaml:ro
     # user: "${UID}:${GID}"

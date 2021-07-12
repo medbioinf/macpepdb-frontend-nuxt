@@ -7,6 +7,8 @@ COPY ./macpepdb_web_backend /app/macpepdb_web_backend
 COPY ./macpepdb_web_backend/entrypoint.sh /app/
 COPY Pipfile /app
 COPY Pipfile.lock /app
+COPY config.yaml /app
+COPY config.production.yaml /app
 
 RUN apt-get update -y && apt-get install -y libev-dev \
     && pip install --upgrade pip \
