@@ -19,7 +19,7 @@ class Environment(Enum):
 class Configuration():
     @staticmethod
     def get_config_and_env(consider_cli: bool = True) -> tuple:
-        environment = Environment.get(os.getenv('MDCHQ_ENV', Environment.development.name))
+        environment = Environment.get(os.getenv('MACPEPDB_WEB_ENV', Environment.development.name))
 
         cli_args = None
         if consider_cli:

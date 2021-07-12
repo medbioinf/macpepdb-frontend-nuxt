@@ -53,7 +53,7 @@ The configuration for the backend is split into multiple files for different env
 | `config.production.yaml` | 2 | production | some minor adjustments for production |
 | `config.local.yaml` | 4 | all | excluded from GIT, serves as user specific overwrite |
 
-The environment is set by the environment variable `MACPEPDB_ENV`. The default environment is `development`.
+The environment is set by the environment variable `MACPEPDB_WEB_ENV`. The default environment is `development`.
 
 You can overwrite some configuration variables and the environment with CLI arguments. For more information run `pipenv run python -m macpepdb_web_backend --help`
 

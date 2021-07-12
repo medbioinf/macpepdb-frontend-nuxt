@@ -16,6 +16,6 @@ RUN apt-get update -y && apt-get install -y libev-dev \
     && pipenv install --system --skip-lock \
     && chmod 755 ./entrypoint.sh
 
-ENV MACPEPDB_ENV production
+ENV MACPEPDB_WEB_ENV production
 
 ENTRYPOINT [ "./entrypoint.sh" ]
