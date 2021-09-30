@@ -41,13 +41,14 @@ class ApiPeptidesController(ApiAbstractPeptideController):
     @app.route("/api/peptides/<string:sequence>/proteins", endpoint="api_peptide_proteins_path", methods=["GET"])
     def proteins(sequence: str):
         sequence = sequence.upper()
+        mass = Peptide.calculate_mass(sequence)
         database_connection = get_database_connection()
         with database_connection.cursor() as database_cursor:
             protein_query = (
                 f"SELECT accession, secondary_accessions, entry_name, name, sequence, taxonomy_id, proteome_id, is_reviewed FROM {Protein.TABLE_NAME} "
-                f"WHERE accession = ANY(SELECT protein_accession FROM {ProteinPeptideAssociation.TABLE_NAME} WHERE peptide_sequence = %s);"
+                f"WHERE accession = ANY(SELECT protein_accession FROM {ProteinPeptideAssociation.TABLE_NAME} WHERE peptide_mass = %s AND peptide_sequence = %s);"
             )
-            database_cursor.execute(protein_query, (sequence,))
+            database_cursor.execute(protein_query, (mass, sequence))
 
             return jsonify({
                 "proteins": [{
