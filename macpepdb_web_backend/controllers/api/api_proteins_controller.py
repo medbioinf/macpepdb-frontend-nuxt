@@ -95,7 +95,7 @@ class ApiProteinsController(ApplicationController):
             if "sequence" in data:
                 EnzymeClass = DigestEnzyme.get_enzyme_by_name("trypsin")
                 enzyme = EnzymeClass(data["maximum_number_of_missed_cleavages"], data["minimum_peptide_length"], data["maximum_peptide_length"])
-                peptides = enzyme.digest(Protein("TMP", [], "TMP", "TMP", data["sequence"], [], [], False))
+                peptides = enzyme.digest(Protein("TMP", [], "TMP", "TMP", data["sequence"], [], [], False, 0))
             elif "accession" in data:
                 database_connection = get_database_connection()
                 with database_connection.cursor() as database_cursor:
