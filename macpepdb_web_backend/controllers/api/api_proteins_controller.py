@@ -1,8 +1,6 @@
-from collections import defaultdict
 from flask import request, jsonify
 from macpepdb.proteomics.amino_acid import AminoAcid
 from macpepdb.proteomics.mass.convert import to_float as mass_to_float
-from macpepdb.proteomics.enzymes.digest_enzyme import DigestEnzyme
 from macpepdb.models.protein import Protein
 from macpepdb.models.peptide import Peptide
 from macpepdb.models.protein_peptide_association import ProteinPeptideAssociation
@@ -11,6 +9,7 @@ from macpepdb.models.taxonomy import Taxonomy
 from macpepdb_web_backend import app, get_database_connection
 from macpepdb_web_backend.models.convert import peptide_to_dict, protein_to_dict
 from macpepdb_web_backend.controllers.application_controller import ApplicationController
+from macpepdb_web_backend.controllers.api.api_digestion_controller import ApiDigestionController
 
 class ApiProteinsController(ApplicationController):
     @staticmethod
@@ -67,52 +66,30 @@ class ApiProteinsController(ApplicationController):
     @staticmethod
     @app.route("/api/proteins/digest", endpoint="api_protein_digest_path", methods=["POST"])
     def digest():
-        errors = defaultdict(list)
+        """
+        Digests the seqeunce of the given protein.
+        """
         data = request.get_json()
+        errors = ApiDigestionController.check_digestion_parameters(data)
 
-        for attribute in  ["maximum_number_of_missed_cleavages", "minimum_peptide_length", "maximum_peptide_length"]:
-            if attribute in data:
-                if not isinstance(data[attribute], int):
-                    errors[attribute].append("must be an integer")
-            else:
-                errors[attribute].append("cannot be missing")
-            
-
-        if not len(errors):
-            if data["maximum_number_of_missed_cleavages"] < 0:
-                errors["maximum_number_of_missed_cleavages"].append("must be greater or equals 0")
-
-            for attribute in  ["minimum_peptide_length", "maximum_peptide_length"]:
-                if data[attribute] < 1:
-                    errors["minimum_peptide_length"].append("must be greater or equals 1")
-
-            if data["maximum_peptide_length"] < data["minimum_peptide_length"]:
-                minimum_peptide_length = data["minimum_peptide_length"]
-                errors["minimum_peptide_length"].append(f"must be greater or equals {minimum_peptide_length} (minimum peptide length)")
+        if not "accession" in data:
+            errors["accession"].append("cannot be empty")
 
         peptides = []
-        if not len(errors):
-            if "sequence" in data:
-                EnzymeClass = DigestEnzyme.get_enzyme_by_name("trypsin")
-                enzyme = EnzymeClass(data["maximum_number_of_missed_cleavages"], data["minimum_peptide_length"], data["maximum_peptide_length"])
-                peptides = enzyme.digest(Protein("TMP", [], "TMP", "TMP", data["sequence"], [], [], False, 0))
-            elif "accession" in data:
-                database_connection = get_database_connection()
-                with database_connection.cursor() as database_cursor:
-                    protein = Protein.select(database_cursor, ("accession = %s", [data["accession"]]))
-                    if protein:
-                        peptides = list(filter(
-                            lambda peptide: peptide.number_of_missed_cleavages <= data["maximum_number_of_missed_cleavages"] and data["minimum_peptide_length"] <= peptide.length <= data["maximum_peptide_length"],
-                            protein.peptides(database_cursor)
-                        ))
-                    else:
-                        errors["accession"].append("not found")
-            else:
-                errors["accession"].append("sequence or accession must be present")
-                errors["seqeunce"].append("sequence or accession must be present")
+        if len(errors) == 0:
+            database_connection = get_database_connection()
+            with database_connection.cursor() as database_cursor:
+                protein = Protein.select(database_cursor, ("accession = %s", [data["accession"]]))
+                if protein:
+                    peptides = list(filter(
+                        lambda peptide: peptide.number_of_missed_cleavages <= data["maximum_number_of_missed_cleavages"] and data["minimum_peptide_length"] <= peptide.length <= data["maximum_peptide_length"],
+                        protein.peptides(database_cursor)
+                    ))
+                    peptides.sort(key = lambda peptide: peptide.mass)
+                else:
+                    errors["accession"].append("not found")
 
-        peptides.sort(key = lambda peptide: peptide.mass)
-        if not len(errors):
+        if len(errors) == 0:
             return jsonify({
                 "peptides": [peptide_to_dict(peptide) for peptide in peptides],
                 "count": len(peptides)

@@ -19,7 +19,7 @@
         </ul>
         <div class="tab-content">
             <div :class="{'show active': show_search_for_sequence}" class="tab-pane fade">
-                <PeptideSequenceSearch :parent_event_bus="local_event_bus"></PeptideSequenceSearch>
+                <PeptideSequenceSearch></PeptideSequenceSearch>
             </div>
             <div :class="{'show active': show_search_for_theoretical_mass}" class="tab-pane fade">
                 <PeptideTheoreticalMassSearch :parent_mass="mass"></PeptideTheoreticalMassSearch>

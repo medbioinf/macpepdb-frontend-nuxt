@@ -186,6 +186,13 @@ export default {
         // Result pagination events
         this.local_event_bus.$on("PAGE_CHANGED", page => this.goToPage(page))
     },
+    activated(){
+        // Sets theoretical mass from url query if present
+        if(this.$route.query.theoretical_mass){
+            var mass = Number.parseFloat(this.$route.query.theoretical_mass)
+            this.search_params.mass = !Number.isNaN(mass) ? mass : null
+        }
+    },
     methods: {
         areSearchParameterTheSameAsBefore(current_search_request_body){
             var body_copy = {...current_search_request_body}

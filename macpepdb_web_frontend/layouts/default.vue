@@ -32,6 +32,17 @@
                                 </li>
                         </ul>
                         <p class="application-menu-label">
+                                Tools
+                        </p>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <NuxtLink to="/digestion" class="nav-link">
+                                        <i class="fas fa-cut"></i>
+                                        <span>Digestion</span>
+                                </NuxtLink>
+                            </li>
+                        </ul>
+                        <p class="application-menu-label">
                         </p>
                         <ul class="nav flex-column">
                             <li class="nav-item">
