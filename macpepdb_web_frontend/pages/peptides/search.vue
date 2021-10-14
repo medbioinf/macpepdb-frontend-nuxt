@@ -51,21 +51,31 @@ export default {
         this.local_event_bus.$on("MASS_SELECTED", mass => this.massSelectedHandle(mass))
     },
     mounted(){
-        if(this.$route.query.tab){
-            switch (this.$route.query.tab) {
-                case "search-for-sequence":
-                    this.showSearchForSequence()
-                    break
-                case "theoretical-mass-search":
-                    this.showSearchForTheoreticalMass()
-                    break
-                case "search-by-protein":
-                    this.showSearchByProtein()
-                    break
-            }
-        }
+        this.activateTabByUrlQueryParam()
+    },
+    activated(){
+        this.activateTabByUrlQueryParam()
     },
     methods: {
+        /**
+         * Activates the correct tab from the url query parameter "tab".
+         * @function activateTabByUrlQueryParam
+         */
+        activateTabByUrlQueryParam(){
+            if(this.$route.query.tab){
+                switch (this.$route.query.tab) {
+                    case "search-for-sequence":
+                        this.showSearchForSequence()
+                        break
+                    case "theoretical-mass-search":
+                        this.showSearchForTheoreticalMass()
+                        break
+                    case "search-by-protein":
+                        this.showSearchByProtein()
+                        break
+                }
+            }
+        },
         showSearchForSequence(){
             this.show_search_for_theoretical_mass = false
             this.show_search_by_protein = false
