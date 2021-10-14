@@ -240,7 +240,8 @@ export default {
          */
         selectMass(idx, is_database_peptide){
             var mass = is_database_peptide ? this.peptides.database[idx].mass : this.peptides.digestion[idx].mass
-            this.$router.push({ name: "peptides-search", query: { tab: "theoretical-mass-search", theoretical_mass: mass} })
+            this.$store.commit('peptide_search/setMass', mass)
+            this.$router.push({ name: "peptides-search", query: { tab: "theoretical-mass-search" }})
         },
         /**
          * Toggles the visibility of the digestion parameter inputs.
