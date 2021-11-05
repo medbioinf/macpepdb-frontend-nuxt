@@ -43,12 +43,17 @@ class ApiDashboardController(ApplicationController):
                     'last_update': 'n/a'
                 }
 
+            database_comment = MaintenanceInformation.select(database_cursor, MaintenanceInformation.COMMENT_KEY)
+            if database_comment:
+                database_comment = database_comment.values["text"]
+
         return jsonify({
             "peptide_partitions_svg": peptide_partitions_svg,
             "peptide_count": peptide_count,
             "partition_boundaries": partition_boundaries,
             "digestion_paramters": digestion_paramters,
-            "database_status": database_status
+            "database_status": database_status,
+            "database_comment": database_comment
         })
 
     @staticmethod

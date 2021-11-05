@@ -1,6 +1,11 @@
 <template>
   <div class="dashboard">
     <h1>Welcome to MaCPepDB - Mass Centric Peptide Database</h1>
+    <div v-if="dashboard_data.database_comment" class="card mb-3">
+      <div class="card-body">
+        <p><i class="fas fa-info-circle"></i> {{ dashboard_data.database_comment }}</p>
+      </div>
+    </div>
     <div class="card mb-3">
       <div class="card-body">
         <p>From here you have two options to search the database:</p>
