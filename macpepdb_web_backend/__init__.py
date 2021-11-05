@@ -4,13 +4,13 @@ from logging import error
 
 from flask import Flask, g as request_store, request
 from flask.json import jsonify
-from psycopg2.pool import ThreadedConnectionPool
 from threading import Thread
 from werkzeug.exceptions import HTTPException
 
 
 from macpepdb.proteomics.mass.convert import to_float as mass_to_float
 
+from macpepdb_web_backend.database.connection_pool import ConnectionPool
 from macpepdb_web_backend.utility.configuration import Configuration
 from macpepdb_web_backend.utility.headers.cross_origin_resource_sharing import add_allow_cors_headers
 from macpepdb_web_backend.utility.matomo import track_request as matomo_track_request
@@ -33,11 +33,16 @@ def inject_global_variables():
         mass_to_float = mass_to_float
     )
 
-# Initialize connection pool for MaCPepDB database
-# Please use `get_database_connection` to get a database connection which is valid for the current request. It will put back automatically.
-# However, if you want to use a database connection in a generator for streaming, you have to manually get and put back the connection.
-# The best way to deal with it in a generator, is to use a try/catch-block and put the connection back when GeneratorExit is thrown or in the finally-block.
-macpepdb_pool = ThreadedConnectionPool(1, config['macpepdb']['pool_size'], config['macpepdb']['url'])
+
+macpepdb_pool = ConnectionPool(1, config['macpepdb']['pool_size'], config['macpepdb']['url'])
+"""Connection pool for MaCPepDB database.
+Use `get_database_connection` to get a database connection which is valid during a request request.
+It will be put back automatically.
+However, if you want to use a database connection in a generator for streaming,
+you have to manually get and put back the connection.
+The best way to deal with it in a generator, is to use a try/catch-block
+and put the connection back when GeneratorExit is thrown or in the finally-block.
+"""
 
 def get_database_connection():
     """
