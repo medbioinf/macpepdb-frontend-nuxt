@@ -42,7 +42,9 @@ export default {
             show_search_for_sequence: true,
             show_search_for_theoretical_mass: false,
             show_search_by_protein: false,
-            local_event_bus: new Vue()
+            local_event_bus: new Vue(),
+            // Mass which is passed back by PeptideSequenceSearch or PeptideProteinSearch through the event bus
+            mass: -1
         }
     },
     created(){
@@ -95,17 +97,6 @@ export default {
         massSelectedHandle(mass){
             this.mass = mass
             this.showSearchForTheoreticalMass()
-        }
-    },
-    computed: {
-        // Mass which is set by other components or pages which is then passt to the theoretical mass search
-        mass: {
-            get: function () {
-                return this.$store.state.peptide_search.mass
-            },
-            set: function (value) {
-                this.$store.commit('peptide_search/setMass', value)
-            }
         }
     }
 }
