@@ -2,17 +2,17 @@
     <div>        
         <ul class="nav nav-tabs mb-3">
             <li class="nav-item">
-                <button @click="showSearchForSequence" :class="{'active': show_search_for_sequence}" class="nav-link" type="button">
+                <button @click="showSearchForSequence(true)" :class="{'active': show_search_for_sequence}" class="nav-link" type="button">
                     Search for sequence
                 </button>
             </li>
             <li class="nav-item">
-                <button @click="showSearchForTheoreticalMass" :class="{'active': show_search_for_theoretical_mass}" class="nav-link" type="button">
+                <button @click="showSearchForTheoreticalMass(true)" :class="{'active': show_search_for_theoretical_mass}" class="nav-link" type="button">
                     Search for theoretical mass
                 </button>
             </li>
             <li class="nav-item">
-                <button @click="showSearchByProtein" :class="{'active': show_search_by_protein}" class="nav-link" type="button">
+                <button @click="showSearchByProtein(true)" :class="{'active': show_search_by_protein}" class="nav-link" type="button">
                     Search by protein
                 </button>
             </li>
@@ -76,27 +76,30 @@ export default {
                 }
             }
         },
-        showSearchForSequence(){
+        showSearchForSequence(is_tab_change = false){
             this.show_search_for_theoretical_mass = false
             this.show_search_by_protein = false
             this.show_search_for_sequence = true
-            this.$router.push({name: "peptides-search", query: {tab: "search-for-sequence"}})
+            if(is_tab_change)
+                this.$router.replace({name: "peptides-search", query: {tab: "search-for-sequence"}})
         },
-        showSearchForTheoreticalMass(){
+        showSearchForTheoreticalMass(is_tab_change = false){
             this.show_search_for_sequence = false
             this.show_search_by_protein = false
             this.show_search_for_theoretical_mass = true
-            this.$router.push({name: "peptides-search", query: {tab: "theoretical-mass-search"}})
+            if(is_tab_change)
+                this.$router.replace({name: "peptides-search", query: {tab: "theoretical-mass-search"}})
         },
-        showSearchByProtein(){
+        showSearchByProtein(is_tab_change = false){
             this.show_search_for_sequence = false
             this.show_search_for_theoretical_mass = false
             this.show_search_by_protein = true
-            this.$router.push({name: "peptides-search", query: {tab: "search-by-protein"}})
+            if(is_tab_change)
+                this.$router.replace({name: "peptides-search", query: {tab: "search-by-protein"}})
         },
         massSelectedHandle(mass){
             this.mass = mass
-            this.showSearchForTheoreticalMass()
+            this.showSearchForTheoreticalMass(true)
         }
     }
 }

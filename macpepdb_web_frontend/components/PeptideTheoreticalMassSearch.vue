@@ -185,15 +185,24 @@ export default {
         this.local_event_bus.$on("TAXONOMY_UNSELECTED", () => { this.search_params.taxonomy_id = null })
         // Result pagination events
         this.local_event_bus.$on("PAGE_CHANGED", page => this.goToPage(page))
+        this.setMassFromURL()
     },
     activated(){
-        // Sets theoretical mass from url query if present
-        if(this.$route.query.theoretical_mass){
-            var mass = Number.parseFloat(this.$route.query.theoretical_mass)
-            this.search_params.mass = !Number.isNaN(mass) ? mass : null
-        }
+        this.setMassFromURL()
     },
     methods: {
+        setMassFromURL(){
+            // Sets theoretical mass from url query if present
+            if(this.$route.query.theoretical_mass){
+                var mass = Number.parseFloat(this.$route.query.theoretical_mass)
+                this.search_params.mass = !Number.isNaN(mass) ? mass : null
+                // deep copy query
+                var router_query_without_mass = JSON.parse(JSON.stringify(this.$route.query))
+                // remove mass
+                delete router_query_without_mass.theoretical_mass
+                this.$router.replace({ name: "peptides-search", query: router_query_without_mass })
+            }
+        },
         areSearchParameterTheSameAsBefore(current_search_request_body){
             var body_copy = {...current_search_request_body}
             delete body_copy.limit
