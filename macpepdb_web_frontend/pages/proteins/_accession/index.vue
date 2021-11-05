@@ -112,7 +112,7 @@ export default {
                 .then(response_body => {
                     this.protein = response_body
                 })
-            } else if(response.status = 404) {
+            } else if(response.status == 404) {
                 // Protein not found, do nothing
             } else {
                 this.handleUnknownResponse(response)
