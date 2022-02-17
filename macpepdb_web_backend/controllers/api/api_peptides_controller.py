@@ -1,9 +1,8 @@
 import itertools
-import json
 
-from collections import defaultdict
 from flask import request, jsonify
 
+from macpepdb.database.query_helpers.where_condition import WhereCondition
 from macpepdb.models.peptide import Peptide
 from macpepdb.models.protein import Protein
 from macpepdb.models.protein_peptide_association import ProteinPeptideAssociation
@@ -27,19 +26,34 @@ class ApiPeptidesController(ApiAbstractPeptideController):
     @staticmethod
     @app.route("/api/peptides/<string:sequence>", endpoint="api_peptide_path", methods=["GET"])
     def show(sequence: str):
+        is_reviewed = request.args.get("is_reviewed", None)
+        if is_reviewed is not None:
+            is_reviewed = bool(is_reviewed)
         sequence = sequence.upper()
         database_connection = get_database_connection()
         with database_connection.cursor() as database_cursor:
-            mass = Peptide.calculate_mass(sequence)
-            peptide = Peptide.select(database_cursor, ("mass = %s AND sequence = %s", [mass, sequence]), False, True)
-            if peptide:
-                return jsonify(peptide_to_dict(peptide))
-            else:
+            peptide = Peptide(sequence, 0, None)
+            peptide = Peptide.select(
+                database_cursor,
+                WhereCondition(
+                    ["partition = %s", "AND", "mass = %s", "AND", "sequence = %s"],
+                    [peptide.partition, peptide.mass, peptide.sequence]
+                ),
+                include_metadata=True
+            )
+            if peptide is None:
                 return jsonify({
                     "errors": {
                         "sequence": ["not found"]
                     }
                 }), 404
+            # Return peptide if is_reviewed is not requested (None),
+            # or is_reviewed is requested and True and metadata is_swiss_prot is also True
+            # or is_reviewed is requested and False and metadata is_trembl is True
+            if is_reviewed is None \
+                or is_reviewed and peptide.metadata.is_swiss_prot \
+                or not is_reviewed and peptide.metadata.peptide.metadata.is_trembl:
+                return jsonify(peptide_to_dict(peptide))
 
     @staticmethod
     @app.route("/api/peptides/<string:sequence>/proteins", endpoint="api_peptide_proteins_path", methods=["GET"])
