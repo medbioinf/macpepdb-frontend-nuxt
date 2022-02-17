@@ -54,7 +54,7 @@
                             <td>
                                 <RetractableList v-if="taxonomy_map" :number_of_elements="peptide.taxonomy_ids.length">
                                     <li v-for="taxonomy_id in peptide.taxonomy_ids" :key="taxonomy_id">
-                                        <UniProtTaxonomyLink :taxonomy_id="taxonomy_id" :taxonomy_name="get_taxonomy_name(taxonomy_id)" />
+                                        <UniProtTaxonomyLink :taxonomy_id="taxonomy_id" :taxonomy_name="taxonomy_map[taxonomy_id] || ''" />
                                     </li>
                                 </RetractableList>
                             </td>
@@ -66,7 +66,7 @@
                             <td>
                                 <RetractableList v-if="taxonomy_map" :number_of_elements="peptide.unique_taxonomy_ids.length">
                                     <li v-for="taxonomy_id in peptide.unique_taxonomy_ids" :key="taxonomy_id">
-                                        <UniProtTaxonomyLink :taxonomy_id="taxonomy_id" :taxonomy_name="get_taxonomy_name(taxonomy_id)" />
+                                        <UniProtTaxonomyLink :taxonomy_id="taxonomy_id" :taxonomy_name="taxonomy_map[taxonomy_id] || ''" />
                                     </li>
                                 </RetractableList>
                             </td>
@@ -98,38 +98,18 @@
                     </tbody>
                 </table>
 
-                <h2>Proteins</h2>
-                <div v-if="proteins" class="table-responsive-sm">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>
-                                    Accession
-                                </th>
-                                <th>
-                                    Proteinname
-                                </th>
-                                <th>
-                                    Taxonomy
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="protein in proteins" :key="protein.accession">
-                                <th>
-                                    <NuxtLink :to="{name: 'proteins-accession', params: {accession: protein.accession}}">{{ protein.accession }}</NuxtLink>
-                                </th>
-                                <td>
-                                    {{ protein.name }}
-                                </td>
-                                <td>
-                                    <UniProtTaxonomyLink v-if="taxonomy_map" :taxonomy_id="protein.taxonomy_id" :taxonomy_name="get_taxonomy_name(protein.taxonomy_id)" />
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <h2>Reviewed proteins</h2>
+                <ProteinTable v-if="reviewed_proteins != null && taxonomy_map != null" :proteins="reviewed_proteins" :taxonomy_map="taxonomy_map"></ProteinTable>
+
+                <button @click="toggle_unreviewed_proteins_visibility" type="button" class="btn btn-primary btn-sm">
+                    <span class="me-2">Unreviewed proteins</span>
+                    <i :class="{'fa-caret-up': show_unreviewed_proteins, 'fa-caret-down': !show_unreviewed_proteins}" class="fas"></i>
+                </button>
+                <div :class="{show: show_unreviewed_proteins}" class="collapse">
+                    <h2>Uneviewed proteins</h2>
+                    <ProteinTable v-if="unreviewed_proteins != null && taxonomy_map != null" :proteins="unreviewed_proteins" :taxonomy_map="taxonomy_map"></ProteinTable>
                 </div>
-                <Spinner v-else class="text-center"></Spinner>
+                <Spinner v-if="!are_proteins_loaded" class="text-center"></Spinner>
             </div>
             <Spinner v-else class="text-center"></Spinner>
         </div>
@@ -144,9 +124,11 @@ export default {
     data(){
         return {
             peptide: null,
-            proteins: null,
+            reviewed_proteins: null,
+            unreviewed_proteins: null,
             taxonomy_map: null,
-            peptide_not_found: false
+            peptide_not_found: false,
+            show_unreviewed_proteins: false
         }
     },
     created(){
@@ -184,7 +166,8 @@ export default {
                 return response.json()
             })
             .then(response_body => {
-                this.proteins = response_body.proteins
+                this.reviewed_proteins = response_body.reviewed_proteins
+                this.unreviewed_proteins = response_body.unreviewed_proteins
                 return Promise.resolve()
             })
         },
@@ -209,8 +192,13 @@ export default {
                 return Promise.resolve()
             })
         },
-        get_taxonomy_name(taxonomy_id){
-            return this.taxonomy_map.hasOwnProperty(taxonomy_id) ? this.taxonomy_map[taxonomy_id] : "";
+        toggle_unreviewed_proteins_visibility(){
+            this.show_unreviewed_proteins = !this.show_unreviewed_proteins
+        }
+    },
+    computed: {
+        are_proteins_loaded(){
+            return this.reviewed_proteins != null && this.unreviewed_proteins != null
         }
     }
 }

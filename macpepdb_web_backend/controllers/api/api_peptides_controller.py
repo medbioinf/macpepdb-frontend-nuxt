@@ -10,7 +10,7 @@ from macpepdb.proteomics.mass.convert import to_float as mass_to_float
 from macpepdb.proteomics.enzymes.digest_enzyme import DigestEnzyme
 
 from macpepdb_web_backend import app, get_database_connection
-from macpepdb_web_backend.models.convert import peptide_to_dict
+from macpepdb_web_backend.models.convert import peptide_to_dict, protein_to_dict
 from macpepdb_web_backend.controllers.api.api_abstract_peptide_controller import ApiAbstractPeptideController
 from macpepdb_web_backend.controllers.api.api_digestion_controller import ApiDigestionController
 
@@ -58,27 +58,40 @@ class ApiPeptidesController(ApiAbstractPeptideController):
     @staticmethod
     @app.route("/api/peptides/<string:sequence>/proteins", endpoint="api_peptide_proteins_path", methods=["GET"])
     def proteins(sequence: str):
-        sequence = sequence.upper()
-        mass = Peptide.calculate_mass(sequence)
+        peptide = Peptide(sequence.upper(), 0)
         database_connection = get_database_connection()
         with database_connection.cursor() as database_cursor:
-            protein_query = (
-                f"SELECT accession, secondary_accessions, entry_name, name, sequence, taxonomy_id, proteome_id, is_reviewed FROM {Protein.TABLE_NAME} "
-                f"WHERE accession = ANY(SELECT protein_accession FROM {ProteinPeptideAssociation.TABLE_NAME} WHERE peptide_mass = %s AND peptide_sequence = %s);"
+            proteins = Protein.select(
+                database_cursor,
+                WhereCondition(
+                    [
+                        f"accession = ANY(SELECT protein_accession FROM {ProteinPeptideAssociation.TABLE_NAME} as ppa WHERE ppa.partition = %s AND ppa.peptide_mass = %s AND ppa.peptide_sequence = %s)"
+                    ],
+                    [
+                        peptide.partition,
+                        peptide.mass,
+                        peptide.sequence
+                    ]
+                ),
+                True
             )
-            database_cursor.execute(protein_query, (mass, sequence))
+
+            reviewed_proteins_rows = []
+            unreviewed_proteins_rows = []
+
+            for protein in proteins:
+                if protein.is_reviewed:
+                    reviewed_proteins_rows.append(
+                        protein_to_dict(protein)
+                    )
+                else:
+                    unreviewed_proteins_rows.append(
+                        protein_to_dict(protein)
+                    )
 
             return jsonify({
-                "proteins": [{
-                    "accession": row[0],
-                    "secondary_accessions": row[1],
-                    "entry_name": row[2],
-                    "name": row[3],
-                    "sequence": row[4],
-                    "taxonomy_id": row[5],
-                    "proteome_id": row[6],
-                    "is_reviewed": row[7]
-                } for row in database_cursor.fetchall()]
+                "reviewed_proteins": reviewed_proteins_rows,
+                "unreviewed_proteins": unreviewed_proteins_rows
             })
 
     @staticmethod
