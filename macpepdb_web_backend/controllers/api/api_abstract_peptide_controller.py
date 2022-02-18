@@ -27,6 +27,7 @@ class OutputFormat(Enum):
     stream = "application/octet-stream"
     text = "text/plain"
     csv = "text/csv"
+    fasta = "text/fasta"
 
     def __str__(self) -> str:
         return f"{self.value}"
@@ -340,8 +341,8 @@ class ApiAbstractPeptideController(ApplicationController):
                 limit,
                 metadata_condition
             )
-        elif output_style == OutputFormat.text:
-            return ApiAbstractPeptideController.generate_txt_response(
+        elif output_style == OutputFormat.fasta:
+            return ApiAbstractPeptideController.generate_fasta_response(
                 modification_combination_list.to_where_condition(),
                 order_by_instruction,
                 offset, 
@@ -350,6 +351,14 @@ class ApiAbstractPeptideController(ApplicationController):
             )
         elif output_style == OutputFormat.csv:
             return ApiAbstractPeptideController.generate_csv_response(
+                modification_combination_list.to_where_condition(),
+                order_by_instruction,
+                offset, 
+                limit,
+                metadata_condition
+            )
+        elif output_style == OutputFormat.text:
+            return ApiAbstractPeptideController.generate_text_response(
                 modification_combination_list.to_where_condition(),
                 order_by_instruction,
                 offset, 
@@ -441,16 +450,24 @@ class ApiAbstractPeptideController(ApplicationController):
 
 
     @staticmethod
-    def generate_txt_response(where_condition: WhereCondition, order_by_instruction: str, offset: int, limit: int, metadata_condition: MetadataCondition):
+    def generate_fasta_response(where_condition: WhereCondition, order_by_instruction: str, offset: int, limit: int, metadata_condition: MetadataCondition):
         """
-        This will generate a stream of peptides in fasta format.
-        @param peptides_query The query for peptides
-        @param modification_combination_list List of modification combinations to match
-        @param include_count Boolean to include count in the results, e.g. {'count': 0, 'peptides': [{'sequence': 'PEPTIDER', ...}, ...]}
-        @param offset Result offset
-        @param limit Result limit
-            """
-        def generate_txt_stream():
+        Generates a FASAT stream. Fasta header contains only database identifier and the accession, which is the ongoing peptide index.
+
+        Parameters
+        ----------
+        where_condition : WhereCondition
+            Select conditions
+        order_by_instruction : str
+            SQL instruction for order by
+        offset : int
+            Offset
+        limit : int
+            limit
+        metadata_condition : MetadataCondition
+            Conditions for metadata
+        """
+        def generate_fasta_stream():
             # In a generator the reponse is already returned and the app context is teared down. So we can not use a database connection from the actual request handling.
             # Get a new one from the pool and return it when the generator ist stopped (GeneratorExit is thrown).
             database_connection = macpepdb_pool.getconn()
@@ -482,7 +499,7 @@ class ApiAbstractPeptideController(ApplicationController):
                             break
             finally:
                 macpepdb_pool.putconn(database_connection)
-        return Response(generate_txt_stream(), content_type=OutputFormat.text)
+        return Response(generate_fasta_stream(), content_type=OutputFormat.text)
         
 
     @staticmethod
@@ -538,6 +555,49 @@ class ApiAbstractPeptideController(ApplicationController):
                 macpepdb_pool.putconn(database_connection)
         return Response(generate_csv_stream(), mimetype=str(OutputFormat.csv), headers = {"Content-Disposition": "attachment; filename=macpepdb_peptide.csv"})
     
+
+    @staticmethod
+    def generate_text_response(where_condition: WhereCondition, order_by_instruction: str, offset: int, limit: int, metadata_condition: MetadataCondition):
+        """
+        Generates a plain text stream, where each line contains just the peptide sequence.
+
+        Parameters
+        ----------
+        where_condition : WhereCondition
+            Select conditions
+        order_by_instruction : str
+            SQL instruction for order by
+        offset : int
+            Offset
+        limit : int
+            limit
+        metadata_condition : MetadataCondition
+            Conditions for metadata
+        """
+        def generate_text_stream():
+            # In a generator the reponse is already returned and the app context is teared down. So we can not use a database connection from the actual request handling.
+            # Get a new one from the pool and return it when the generator ist stopped (GeneratorExit is thrown).
+            database_connection = macpepdb_pool.getconn()
+            do_metadata_checks = metadata_condition.has_conditions()
+            try:
+                with database_connection.cursor() as database_cursor:
+                    # Counter for written peptdes
+                    written_peptide_counter = 0
+                
+                    for peptide_idx, peptide in enumerate(Peptide.select(database_cursor, where_condition, order_by=order_by_instruction, include_metadata=True, stream=True)):
+                            # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
+                            if peptide_idx > offset -1 and (not do_metadata_checks or metadata_condition.validate(peptide.metadata)):
+                                if written_peptide_counter > 0:
+                                    yield b"\n"
+                                yield peptide.sequence.encode("utf-8")
+                                # Increase written peptides
+                                written_peptide_counter += 1
+                            # Break for-loop if written_peptide_counter reaches the limit.
+                            if written_peptide_counter == limit:
+                                break
+            finally:
+                macpepdb_pool.putconn(database_connection)
+        return Response(generate_text_stream(), mimetype=str(OutputFormat.csv), headers = {"Content-Disposition": "attachment; filename=macpepdb_peptide.csv"})
 
     @staticmethod
     def peptide_to_json(peptide: Peptide):
