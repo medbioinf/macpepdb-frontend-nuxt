@@ -1,4 +1,6 @@
 from flask import request, jsonify
+
+from macpepdb.database.query_helpers.where_condition import WhereCondition
 from macpepdb.proteomics.amino_acid import AminoAcid
 from macpepdb.proteomics.mass.convert import to_float as mass_to_float
 from macpepdb.models.protein import Protein
@@ -20,7 +22,14 @@ class ApiProteinsController(ApplicationController):
         database_connection = get_database_connection()
 
         with database_connection.cursor() as database_cursor:
-            protein = Protein.select(database_cursor, ("accession = %s", [accession]))
+            protein = Protein.select(
+                database_cursor, 
+                WhereCondition(
+                    ["accession = %s"], 
+                    [accession]
+                ),
+                False
+            )
 
             if protein:
                 response_body = protein_to_dict(protein)
@@ -42,24 +51,28 @@ class ApiProteinsController(ApplicationController):
 
         database_connection = get_database_connection()
         with database_connection.cursor() as database_cursor:
-                peptide_query = (
-                    f"SELECT mass, sequence, number_of_missed_cleavages, is_swiss_prot, is_trembl, taxonomy_ids, unique_taxonomy_ids, proteome_ids FROM {Peptide.TABLE_NAME} "
-                    f"WHERE (mass, sequence) IN (SELECT peptide_mass, peptide_sequence FROM {ProteinPeptideAssociation.TABLE_NAME} WHERE protein_accession = %s) ORDER BY mass ASC;"
+                peptides = Peptide.select(
+                    database_cursor,
+                    WhereCondition(
+                        [f"(peps.partition, peps.mass, peps.sequence) IN (SELECT partition, peptide_mass, peptide_sequence FROM {ProteinPeptideAssociation.TABLE_NAME} as ppa WHERE ppa.protein_accession = %s)"],
+                        [accession]
+                    ),
+                    fetchall=True,
+                    include_metadata= True
                 )
-                
-                database_cursor.execute(peptide_query, (accession,))
+                peptides.sort(key = lambda peptide: peptide.mass)
 
                 return jsonify({
                     "peptides": [{
-                        "mass": mass_to_float(row[0]),
-                        "sequence": row[1],
-                        "number_of_missed_cleavages": row[2],
-                        "is_swiss_prot": row[3],
-                        "is_trembl": row[4],
-                        "taxonomy_ids": row[5],
-                        "unique_taxonomy_ids": row[6],
-                        "proteome_ids": row[7]
-                    } for row in database_cursor.fetchall()]
+                        "mass": mass_to_float(peptide.mass),
+                        "sequence": peptide.sequence,
+                        "number_of_missed_cleavages": peptide.number_of_missed_cleavages,
+                        "is_swiss_prot": peptide.metadata.is_swiss_prot,
+                        "is_trembl": peptide.metadata.is_trembl,
+                        "taxonomy_ids": peptide.metadata.taxonomy_ids,
+                        "unique_taxonomy_ids": peptide.metadata.unique_taxonomy_ids,
+                        "proteome_ids": peptide.metadata.proteome_ids
+                    } for peptide in peptides]
                 })
 
 
@@ -79,7 +92,14 @@ class ApiProteinsController(ApplicationController):
         if len(errors) == 0:
             database_connection = get_database_connection()
             with database_connection.cursor() as database_cursor:
-                protein = Protein.select(database_cursor, ("accession = %s", [data["accession"]]))
+                protein = Protein.select(
+                    database_cursor, 
+                    WhereCondition(
+                        ["accession = %s"], 
+                        [data["accession"]]
+                    ),
+                    False
+                )
                 if protein:
                     peptides = list(filter(
                         lambda peptide: peptide.number_of_missed_cleavages <= data["maximum_number_of_missed_cleavages"] and data["minimum_peptide_length"] <= peptide.length <= data["maximum_peptide_length"],
