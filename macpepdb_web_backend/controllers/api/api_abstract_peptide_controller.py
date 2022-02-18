@@ -1,5 +1,7 @@
+from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
+from enum import Enum, unique
 from importlib.metadata import metadata
 import json
 import math
@@ -18,6 +20,28 @@ from macpepdb.models.peptide_metadata import PeptideMetadata
 
 from macpepdb_web_backend import get_database_connection, macpepdb_pool, app
 from macpepdb_web_backend.controllers.application_controller import ApplicationController
+
+@unique
+class OutputFormat(Enum):
+    json = "application/json"
+    stream = "application/octet-stream"
+    text = "text/plain"
+    csv = "text/csv"
+
+    def __str__(self) -> str:
+        return f"{self.value}"
+
+    @classmethod
+    def from_name(cls, name: str) -> OutputFormat:
+        return cls[name.lower()]
+
+    @classmethod
+    def from_value(cls, value: str) -> OutputFormat:
+        lower_value = value.lower()
+        for format in cls:
+            if format.value == lower_value:
+                return format
+        raise KeyError(f"f{value} not found")
 
 @dataclass
 class MetadataCondition:
@@ -134,7 +158,6 @@ class MetadataCondition:
 
 
 class ApiAbstractPeptideController(ApplicationController):
-    SUPPORTED_OUTPUTS = ['application/json', 'application/octet-stream', 'text/plain', 'text/csv']
     SUPPORTED_ORDER_COLUMNS = ['mass', 'length', 'sequence', 'number_of_missed_cleavages']
     SUPPORTED_ORDER_DIRECTIONS = ['asc', 'desc']
     FASTA_SEQUENCE_LEN = 60
@@ -169,23 +192,16 @@ class ApiAbstractPeptideController(ApplicationController):
             
 
         output_style = None
-        # Use file extension to select output format.
-        if file_extension == "json":
-            output_style = ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]
-        elif file_extension == "stream":
-            output_style = ApiAbstractPeptideController.SUPPORTED_OUTPUTS[1]
-        elif file_extension == "txt":
-            output_style = ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]
-        elif file_extension == "csv":
-            output_style = ApiAbstractPeptideController.SUPPORTED_OUTPUTS[3]
+        if file_extension is not None:
+            try:
+                output_style = OutputFormat.from_name(file_extension)
+            except KeyError:
+                pass
         else:
-            # If no file extension is given, accept header is used to select the output format
-            # Get accept header (default 'application/json'), split by ',' in case multiple mime types where supported and take the first one
-            output_style = request.headers.get('accept', default=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]).split(',')[0].strip()
-
-        # If the mime type is not supported set default one
-        if not output_style in ApiAbstractPeptideController.SUPPORTED_OUTPUTS:
-            output_style = ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]
+            try:
+                output_style = OutputFormat.from_value(request.headers.get("accept", default=""))
+            except KeyError:
+                output_style = OutputFormat.json
 
         # validate int attributes
         for attribute in  ["lower_precursor_tolerance_ppm", "upper_precursor_tolerance_ppm", "variable_modification_maximum"]:
@@ -276,7 +292,7 @@ class ApiAbstractPeptideController(ApplicationController):
 
                     # Sort by `order_by`
                     order_by_instruction = None
-                    if order_by and not output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
+                    if order_by and not output_style == OutputFormat.text:
                         order_by_instruction = f"{order_by} {data['order_direction']}"
 
                     # Note about offset and limit: It is much faster to fetch data from server and discard rows below the offset and stop the fetching when the limit is reached, instead of applying LIMIT and OFFSET directly to the query.
@@ -307,7 +323,7 @@ class ApiAbstractPeptideController(ApplicationController):
                 "errors": errors
             }), 422
 
-        if output_style ==  ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]:
+        if output_style == OutputFormat.json:
             return ApiAbstractPeptideController.generate_json_respond(
                 modification_combination_list.to_where_condition(),
                 order_by_instruction,
@@ -316,7 +332,7 @@ class ApiAbstractPeptideController(ApplicationController):
                 include_count,
                 metadata_condition
             )
-        elif output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[1]:
+        elif output_style == OutputFormat.stream:
             return ApiAbstractPeptideController.generate_octet_response(
                 modification_combination_list.to_where_condition(),
                 order_by_instruction,
@@ -324,7 +340,7 @@ class ApiAbstractPeptideController(ApplicationController):
                 limit,
                 metadata_condition
             )
-        elif output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2]:
+        elif output_style == OutputFormat.text:
             return ApiAbstractPeptideController.generate_txt_response(
                 modification_combination_list.to_where_condition(),
                 order_by_instruction,
@@ -332,7 +348,7 @@ class ApiAbstractPeptideController(ApplicationController):
                 limit,
                 metadata_condition
             )
-        elif output_style == ApiAbstractPeptideController.SUPPORTED_OUTPUTS[3]:
+        elif output_style == OutputFormat.csv:
             return ApiAbstractPeptideController.generate_csv_response(
                 modification_combination_list.to_where_condition(),
                 order_by_instruction,
@@ -385,7 +401,7 @@ class ApiAbstractPeptideController(ApplicationController):
             finally:
                 macpepdb_pool.putconn(database_connection)
         # Send stream
-        return Response(generate_json_stream(), content_type=f"{ApiAbstractPeptideController.SUPPORTED_OUTPUTS[0]}; charset=utf-8")
+        return Response(generate_json_stream(), content_type=f"{OutputFormat.json}; charset=utf-8")
 
     @staticmethod
     def generate_octet_response(where_condition: WhereCondition, order_by_instruction: str, offset: int, limit: int, metadata_condition: MetadataCondition):
@@ -421,7 +437,7 @@ class ApiAbstractPeptideController(ApplicationController):
                             break
             finally:
                 macpepdb_pool.putconn(database_connection)
-        return Response(generate_octet_stream(), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[1])
+        return Response(generate_octet_stream(), content_type=OutputFormat.stream)
 
 
     @staticmethod
@@ -466,7 +482,7 @@ class ApiAbstractPeptideController(ApplicationController):
                             break
             finally:
                 macpepdb_pool.putconn(database_connection)
-        return Response(generate_txt_stream(), content_type=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[2])
+        return Response(generate_txt_stream(), content_type=OutputFormat.text)
         
 
     @staticmethod
@@ -520,7 +536,7 @@ class ApiAbstractPeptideController(ApplicationController):
                                 break
             finally:
                 macpepdb_pool.putconn(database_connection)
-        return Response(generate_csv_stream(), mimetype=ApiAbstractPeptideController.SUPPORTED_OUTPUTS[3], headers = {"Content-Disposition": "attachment; filename=macpepdb_peptide.csv"})
+        return Response(generate_csv_stream(), mimetype=str(OutputFormat.csv), headers = {"Content-Disposition": "attachment; filename=macpepdb_peptide.csv"})
     
 
     @staticmethod
