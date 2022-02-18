@@ -5,16 +5,15 @@ export const state = () => ({
             "last_update": "1970-01-01 00:00",
             "maintenance_mode": "Off"
         },
-        "digestion_paramters": {
+        "digestion_parameters": {
             "enzyme_name": "",
             "maximum_number_of_missed_cleavages": 0,
             "maximum_peptide_length": 0,
             "minimum_peptide_length": 0
         },
-        "partition_boundaries": [],
-        "peptide_count": 0,
-        "peptide_partitions_svg": ""
-    }
+        comment: null
+    },
+    is_loaded: false
 })
   
 export const mutations = {

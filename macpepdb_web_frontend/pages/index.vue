@@ -59,15 +59,15 @@
               <tbody>
                 <tr>
                   <th>Enzyme</th>
-                  <td>{{ dashboard_data.digestion_paramters.enzyme_name }}</td>
+                  <td>{{ dashboard_data.digestion_parameters.enzyme_name }}</td>
                 </tr>
                 <tr>
                   <th>Allowed missed cleavages</th>
-                  <td>{{ dashboard_data.digestion_paramters.maximum_number_of_missed_cleavages }}</td>
+                  <td>{{ dashboard_data.digestion_parameters.maximum_number_of_missed_cleavages }}</td>
                 </tr>
                 <tr>
                   <th>Peptide length</th>
-                  <td>{{ dashboard_data.digestion_paramters.minimum_peptide_length }} - {{ dashboard_data.digestion_paramters.maximum_peptide_length }} </td>
+                  <td>{{ dashboard_data.digestion_parameters.minimum_peptide_length }} - {{ dashboard_data.digestion_parameters.maximum_peptide_length }} </td>
                 </tr>
               </tbody>
             </table>
@@ -133,7 +133,7 @@
 export default {
   mounted(){
     if(!this.is_dashboard_loaded){
-      fetch(`${this.$config.macpepdb_backend_base_url}/api/dashboard`, {"no-cors": true})
+      fetch(`${this.$config.macpepdb_backend_base_url}/api/dashboard/maintenance`, {"no-cors": true})
       .then(response => {
         response.json()
         .then(response_body => {
