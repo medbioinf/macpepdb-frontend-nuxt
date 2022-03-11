@@ -21,7 +21,7 @@ honcho = "*"
 requests = "*"
 
 [requires]
-python_version = "3.8"
+python_version = "3.9"
 
 [scripts]
 tests = "bash -c 'python -m unittest tests/*_test_case.py'"
