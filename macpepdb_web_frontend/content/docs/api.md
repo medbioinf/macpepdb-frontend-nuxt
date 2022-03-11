@@ -123,6 +123,31 @@ To get the parent proteins as well, add the parameter `include_proteins` with va
 }
 ```
 
+### Lookup multiple sequences
+#### url
+`http://localhost/api/peptides/lookup`
+#### method
+`POST`
+#### body (JSON)
+```json
+{
+    "seqeunces": [
+        "peptide_sequence_1",
+        "peptide_sequence_2",
+        "peptide_sequence_3",
+        ...
+    ]
+}
+```
+#### ouput (text/plain)
+```txt
+peptide_sequence_1
+peptide_sequence_2
+peptide_sequence_3
+...
+```
+More output formats coming soon.
+
 ### Search by mass
 #### url
 `http://localhost/api/peptides/search`   

@@ -1,18 +1,22 @@
+# std imports
+from collections import defaultdict
 import itertools
+from typing import Iterator
 
-from flask import request, jsonify
-
+# 3rd party imports
+from flask import request, jsonify, Response
 from macpepdb.database.query_helpers.where_condition import WhereCondition
-from macpepdb.models.peptide import Peptide
 from macpepdb.models.protein import Protein
 from macpepdb.models.protein_peptide_association import ProteinPeptideAssociation
 from macpepdb.proteomics.mass.convert import to_float as mass_to_float
 from macpepdb.proteomics.enzymes.digest_enzyme import DigestEnzyme
 
-from macpepdb_web_backend import app, get_database_connection
+# internal imports
+from macpepdb_web_backend import app, get_database_connection, macpepdb_pool
 from macpepdb_web_backend.models.convert import peptide_to_dict, protein_to_dict
 from macpepdb_web_backend.controllers.api.api_abstract_peptide_controller import ApiAbstractPeptideController
 from macpepdb_web_backend.controllers.api.api_digestion_controller import ApiDigestionController
+from macpepdb_web_backend.models.peptide import Peptide
 
 
 class ApiPeptidesController(ApiAbstractPeptideController):
@@ -147,4 +151,52 @@ class ApiPeptidesController(ApiAbstractPeptideController):
                 "errors": errors
             }), 422
 
-    
+
+    @staticmethod
+    @app.route("/api/peptides/lookup", methods=["POST"])
+    def seqeunce_lookup():
+        """
+        Check if the incoming peptide sequences exists in MaCPepDB
+
+        Returns
+        -------
+        Response
+            Flask response
+        """
+        data = request.json
+        errors = defaultdict(list)
+
+        if not "sequences" in data:
+            errors["sequences"].append("cannot be empty")
+        elif not isinstance(data["sequences"], list):
+            errors["sequences"].append("must be a list")
+
+        peptides = [Peptide(sequence, 0) for sequence in data["sequences"]]
+
+        if len(errors) > 0:
+            return jsonify({
+                "errors": errors
+            }), 422
+
+        def generate_text_stream() -> Iterator[str]:
+            database_connection = macpepdb_pool.getconn()
+            try:
+                with database_connection.cursor() as database_cursor:
+                    database_cursor.itersize = 5000
+                    for peptide_idx, peptide in enumerate(Peptide.select(
+                        database_cursor,
+                        WhereCondition(
+                            [
+                                "(partition, mass, sequence) IN (" + ",".join(["(%s, %s, %s)"] * len(peptides)) + ")"
+                            ],
+                            list(itertools.chain(*[(peptide.partition, peptide.mass, peptide.sequence) for peptide in peptides])),
+                        ),
+                        stream=True
+                    )):
+                        if peptide_idx > 0:
+                            yield "\n"
+                        yield peptide.sequence
+            finally:
+                macpepdb_pool.putconn(database_connection)
+
+        return Response(generate_text_stream(), content_type="text/plain")
