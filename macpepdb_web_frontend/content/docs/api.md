@@ -178,6 +178,7 @@ keys:
 * include_count: bool, default: false, optional (includes the peptides count without limit or offset. setting this to false cut the response time by 50%, only accounted for `application/json`-output)
 * order_by: string, default: mass, possible values: `mass` `length` `number_of_missed_cleavages` `sequence`, default: `mass`, optional (ignored for `text/plain`-output)
 * order_descendent: bool, default: false, optional
+* include_metadata: bool, default: false, optional
 
 If `taxonomy_id`, `proteome_id`, `is_reviewed` are used together they will concanted with `and`.
 

@@ -191,6 +191,12 @@ class ApiAbstractPeptideController(ApplicationController):
             if not isinstance(data['order_direction'], str) or not data['order_direction'] in ApiAbstractPeptideController.SUPPORTED_ORDER_DIRECTIONS:
                 errors["order_direction"].append(f"'order_direction' must be a string with one of following values: {', '.join(ApiAbstractPeptideController.SUPPORTED_ORDER_DIRECTIONS)}")
             
+        include_metadata = False
+        if "include_metadata" in data:
+            if isinstance(data["include_metadata"], bool):
+                include_metadata = data["include_metadata"]
+            else:
+                errors["include_metadata"].append("must be a boolean")
 
         output_style = None
         if file_extension is not None:
@@ -324,12 +330,15 @@ class ApiAbstractPeptideController(ApplicationController):
                 "errors": errors
             }), 422
 
+        include_metadata = include_metadata or metadata_condition.has_conditions()
+
         if output_style == OutputFormat.json:
             return ApiAbstractPeptideController.generate_json_respond(
                 modification_combination_list.to_where_condition(),
                 order_by_instruction,
                 offset,
                 limit,
+                include_metadata,
                 include_count,
                 metadata_condition
             )
@@ -339,6 +348,7 @@ class ApiAbstractPeptideController(ApplicationController):
                 order_by_instruction,
                 offset, 
                 limit,
+                include_metadata,
                 metadata_condition
             )
         elif output_style == OutputFormat.fasta:
@@ -347,6 +357,7 @@ class ApiAbstractPeptideController(ApplicationController):
                 order_by_instruction,
                 offset, 
                 limit,
+                include_metadata,
                 metadata_condition
             )
         elif output_style == OutputFormat.csv:
@@ -355,6 +366,7 @@ class ApiAbstractPeptideController(ApplicationController):
                 order_by_instruction,
                 offset, 
                 limit,
+                include_metadata,
                 metadata_condition
             )
         elif output_style == OutputFormat.text:
@@ -363,11 +375,12 @@ class ApiAbstractPeptideController(ApplicationController):
                 order_by_instruction,
                 offset, 
                 limit,
+                include_metadata,
                 metadata_condition
             )
 
     @staticmethod
-    def generate_json_respond(where_condition: WhereCondition, order_by_instruction: str, offset: int, limit: int, include_count: bool, metadata_condition: MetadataCondition):
+    def generate_json_respond(where_condition: WhereCondition, order_by_instruction: str, offset: int, limit: int, include_metadata: bool, include_count: bool, metadata_condition: MetadataCondition):
         """
         Serialize the given peptides as JSON objects, structure: {'result_key': [peptide_json, ...]}
         @param peptides_query The query for peptides
@@ -387,7 +400,7 @@ class ApiAbstractPeptideController(ApplicationController):
                     written_peptides = 0
                     # Open a JSON object and peptide array
                     yield b"{\"peptides\":["
-                    for peptide_idx, peptide in enumerate(Peptide.select(database_cursor, where_condition, order_by=order_by_instruction, include_metadata=True, stream=True)):
+                    for peptide_idx, peptide in enumerate(Peptide.select(database_cursor, where_condition, order_by=order_by_instruction, include_metadata=include_metadata, stream=True)):
                         if peptide_idx >= offset - 1 and (not do_metadata_checks or metadata_condition.validate(peptide.metadata)):
                             if written_peptides > 0:
                                 yield b","
@@ -413,7 +426,7 @@ class ApiAbstractPeptideController(ApplicationController):
         return Response(generate_json_stream(), content_type=f"{OutputFormat.json}; charset=utf-8")
 
     @staticmethod
-    def generate_octet_response(where_condition: WhereCondition, order_by_instruction: str, offset: int, limit: int, metadata_condition: MetadataCondition):
+    def generate_octet_response(where_condition: WhereCondition, order_by_instruction: str, offset: int, limit: int, include_metadata: bool, metadata_condition: MetadataCondition):
         """
         This will generate a stream of JSON-formatted peptides per line. Each JSON-string is bytestring.
         @param peptides_query The query for peptides
@@ -432,7 +445,7 @@ class ApiAbstractPeptideController(ApplicationController):
                     # Counter for written peptdes
                     written_peptide_counter = 0
                 
-                    for peptide_idx, peptide in enumerate(Peptide.select(database_cursor, where_condition, order_by=order_by_instruction, include_metadata=True, stream=True)):
+                    for peptide_idx, peptide in enumerate(Peptide.select(database_cursor, where_condition, order_by=order_by_instruction, include_metadata=include_metadata, stream=True)):
                         if peptide_idx > offset - 1 and (not do_metadata_checks or metadata_condition.validate(peptide.metadata)):
                             # Prepend newline if this is not the first returned peptide
                             if written_peptide_counter > 0 :
@@ -450,7 +463,7 @@ class ApiAbstractPeptideController(ApplicationController):
 
 
     @staticmethod
-    def generate_fasta_response(where_condition: WhereCondition, order_by_instruction: str, offset: int, limit: int, metadata_condition: MetadataCondition):
+    def generate_fasta_response(where_condition: WhereCondition, order_by_instruction: str, offset: int, limit: int, include_metadata: bool, metadata_condition: MetadataCondition):
         """
         Generates a FASAT stream. Fasta header contains only database identifier and the accession, which is the ongoing peptide index.
 
@@ -477,7 +490,7 @@ class ApiAbstractPeptideController(ApplicationController):
                     # Counter for written peptdes
                     written_peptide_counter = 0
                 
-                    for peptide_idx, peptide in enumerate(Peptide.select(database_cursor, where_condition, order_by=order_by_instruction, include_metadata=True, stream=True)):
+                    for peptide_idx, peptide in enumerate(Peptide.select(database_cursor, where_condition, order_by=order_by_instruction, include_metadata=include_metadata, stream=True)):
                         # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
                         if peptide_idx > offset - 1 and (not do_metadata_checks or metadata_condition.validate(peptide.metadata)):
                             # Prepend semicolon if this is not the first returned peptide
@@ -503,7 +516,7 @@ class ApiAbstractPeptideController(ApplicationController):
         
 
     @staticmethod
-    def generate_csv_response(where_condition: WhereCondition, order_by_instruction: str, offset: int, limit: int, metadata_condition: MetadataCondition):
+    def generate_csv_response(where_condition: WhereCondition, order_by_instruction: str, offset: int, limit: int, include_metadata: bool, metadata_condition: MetadataCondition):
         """
         This will generate a stream of peptides in fasta format.
         @param peptides_query The query for peptides
@@ -523,11 +536,13 @@ class ApiAbstractPeptideController(ApplicationController):
                     written_peptide_counter = 0
 
                     # Write header to stream
-                    yield b"\"mass\",\"sequence\",\"in_swiss_prot\",\"in_trembl\",\"taxonomy_ids\",\"unique_for_taxonomy_ids\",\"proteome_ids\""
+                    yield b"\"mass\",\"sequence\""
+                    if include_metadata:
+                        yield b",\"in_swiss_prot\",\"in_trembl\",\"taxonomy_ids\",\"unique_for_taxonomy_ids\",\"proteome_ids\""
                     # Counter for written peptdes
                     written_peptide_counter = 0
                 
-                    for peptide_idx, peptide in enumerate(Peptide.select(database_cursor, where_condition, order_by=order_by_instruction, include_metadata=True, stream=True)):
+                    for peptide_idx, peptide in enumerate(Peptide.select(database_cursor, where_condition, order_by=order_by_instruction, include_metadata=include_metadata, stream=True)):
                             # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
                             if peptide_idx > offset -1 and (not do_metadata_checks or metadata_condition.validate(peptide.metadata)):
                                 yield b"\n"
@@ -557,7 +572,7 @@ class ApiAbstractPeptideController(ApplicationController):
     
 
     @staticmethod
-    def generate_text_response(where_condition: WhereCondition, order_by_instruction: str, offset: int, limit: int, metadata_condition: MetadataCondition):
+    def generate_text_response(where_condition: WhereCondition, order_by_instruction: str, offset: int, limit: int, include_metadata: bool, metadata_condition: MetadataCondition):
         """
         Generates a plain text stream, where each line contains just the peptide sequence.
 
@@ -584,7 +599,7 @@ class ApiAbstractPeptideController(ApplicationController):
                     # Counter for written peptdes
                     written_peptide_counter = 0
                 
-                    for peptide_idx, peptide in enumerate(Peptide.select(database_cursor, where_condition, order_by=order_by_instruction, include_metadata=True, stream=True)):
+                    for peptide_idx, peptide in enumerate(Peptide.select(database_cursor, where_condition, order_by=order_by_instruction, include_metadata=include_metadata, stream=True)):
                             # Write peptide to stream if matching_peptide_counter is larger than offset and written_peptide_counter is below the limit
                             if peptide_idx > offset -1 and (not do_metadata_checks or metadata_condition.validate(peptide.metadata)):
                                 if written_peptide_counter > 0:
