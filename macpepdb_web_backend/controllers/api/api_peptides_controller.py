@@ -9,7 +9,7 @@ from macpepdb.database.query_helpers.where_condition import WhereCondition
 from macpepdb.models.protein import Protein
 from macpepdb.models.protein_peptide_association import ProteinPeptideAssociation
 from macpepdb.proteomics.mass.convert import to_float as mass_to_float
-from macpepdb.proteomics.enzymes.digest_enzyme import DigestEnzyme
+from macpepdb.proteomics.enzymes import get_digestion_enzyme_by_name
 
 # internal imports
 from macpepdb_web_backend import app, get_database_connection, macpepdb_pool
@@ -123,7 +123,7 @@ class ApiPeptidesController(ApiAbstractPeptideController):
         digestion_peptides = []
         database_peptides = []
         if len(errors) == 0:
-            EnzymeClass = DigestEnzyme.get_enzyme_by_name("trypsin")
+            EnzymeClass = get_digestion_enzyme_by_name("trypsin")
             enzyme = EnzymeClass(data["maximum_number_of_missed_cleavages"], data["minimum_peptide_length"], data["maximum_peptide_length"])
             digestion_peptides = enzyme.digest(Protein("TMP", [], "TMP", "TMP", data["sequence"], [], [], False, 0))
 
