@@ -16,7 +16,7 @@ from macpepdb.models.taxonomy import Taxonomy, TaxonomyRank
 from macpepdb.models.peptide_metadata import PeptideMetadata
 
 
-from macpepdb_web_backend import get_database_connection, macpepdb_pool, app
+from macpepdb_web_backend.server import get_database_connection, macpepdb_pool, app
 from macpepdb_web_backend.controllers.application_controller import ApplicationController
 from macpepdb_web_backend.models.peptide import Peptide
 

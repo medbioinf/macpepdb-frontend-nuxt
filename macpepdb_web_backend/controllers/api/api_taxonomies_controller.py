@@ -5,12 +5,11 @@ from flask import json, request, jsonify, url_for
 from macpepdb.models.taxonomy import Taxonomy
 from macpepdb.models.taxonomy_merge import TaxonomyMerge
 
-from macpepdb_web_backend import app, get_database_connection
+from macpepdb_web_backend.server import app, get_database_connection
 from macpepdb_web_backend.controllers.application_controller import ApplicationController
 
 class ApiTaxonomiesController(ApplicationController):
     @staticmethod
-    @app.route("/api/taxonomies/search", endpoint="api_taxonomy_search_path", methods=["POST"])
     def search():
         data = request.get_json()
         errors = defaultdict(list)
@@ -49,7 +48,6 @@ class ApiTaxonomiesController(ApplicationController):
             }), 422
 
     @staticmethod
-    @app.route("/api/taxonomies/<int:id>", endpoint="api_taxonomy_path")
     def show(id):
         database_connection = get_database_connection()
         with database_connection.cursor() as database_cursor:
@@ -76,7 +74,6 @@ class ApiTaxonomiesController(ApplicationController):
             return jsonify(["not found"]), 422
 
     @staticmethod
-    @app.route("/api/taxonomies/by/ids", endpoint="api_taxonomies_by_ids_path", methods=["POST"])
     def by_ids():
         data = request.get_json()
         errors = defaultdict(list)

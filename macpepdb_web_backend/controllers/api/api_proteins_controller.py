@@ -8,14 +8,13 @@ from macpepdb.models.peptide import Peptide
 from macpepdb.models.protein_peptide_association import ProteinPeptideAssociation
 from macpepdb.models.taxonomy import Taxonomy
 
-from macpepdb_web_backend import app, get_database_connection
+from macpepdb_web_backend.server import app, get_database_connection
 from macpepdb_web_backend.models.convert import peptide_to_dict, protein_to_dict
 from macpepdb_web_backend.controllers.application_controller import ApplicationController
 from macpepdb_web_backend.controllers.api.api_digestion_controller import ApiDigestionController
 
 class ApiProteinsController(ApplicationController):
     @staticmethod
-    @app.route("/api/proteins/<string:accession>", endpoint="api_protein_path")
     def show(accession: str):
         accession = accession.upper()
 
@@ -46,7 +45,6 @@ class ApiProteinsController(ApplicationController):
                 }), 404
 
     @staticmethod
-    @app.route("/api/proteins/<string:accession>/peptides", endpoint="api_protein_peptides_path")
     def peptides(accession: str):
 
         database_connection = get_database_connection()
@@ -77,7 +75,6 @@ class ApiProteinsController(ApplicationController):
 
 
     @staticmethod
-    @app.route("/api/proteins/digest", endpoint="api_protein_digest_path", methods=["POST"])
     def digest():
         """
         Digests the seqeunce of the given protein.
@@ -120,7 +117,6 @@ class ApiProteinsController(ApplicationController):
             }), 422
 
     @staticmethod
-    @app.route("/api/proteins/amino-acids", endpoint="api_protein_amino_acids_path")
     def amino_acids():
         return jsonify({
             "amino_acids": [{

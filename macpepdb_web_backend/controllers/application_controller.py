@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from macpepdb.models.maintenance_information import MaintenanceInformation
 from macpepdb.tasks.statistics import Statistics
 
-from macpepdb_web_backend import app, get_database_connection
+from macpepdb_web_backend.server import app, get_database_connection
 
 class ApplicationController:
     pass

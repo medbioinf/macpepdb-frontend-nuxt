@@ -3,12 +3,11 @@ from flask import jsonify
 from macpepdb.models.maintenance_information import MaintenanceInformation
 
 # internal imports
-from macpepdb_web_backend import app, get_database_connection
+from macpepdb_web_backend.server import app, get_database_connection
 from macpepdb_web_backend.controllers.application_controller import ApplicationController
 
 class ApiDashboardController(ApplicationController):
     @staticmethod
-    @app.route("/api/dashboard/citus")
     def citus():
         database_connection = get_database_connection()
         with database_connection.cursor() as database_cursor:
@@ -28,7 +27,6 @@ class ApiDashboardController(ApplicationController):
             })
 
     @staticmethod
-    @app.route("/api/dashboard/maintenance")
     def maintenance():
         database_connection = get_database_connection()
         with database_connection.cursor() as database_cursor:

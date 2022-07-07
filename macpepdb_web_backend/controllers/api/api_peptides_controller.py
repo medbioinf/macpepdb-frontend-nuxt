@@ -12,7 +12,7 @@ from macpepdb.proteomics.mass.convert import to_float as mass_to_float
 from macpepdb.proteomics.enzymes import get_digestion_enzyme_by_name
 
 # internal imports
-from macpepdb_web_backend import app, get_database_connection, macpepdb_pool
+from macpepdb_web_backend.server import app, get_database_connection, macpepdb_pool
 from macpepdb_web_backend.models.convert import peptide_to_dict, protein_to_dict
 from macpepdb_web_backend.controllers.api.api_abstract_peptide_controller import ApiAbstractPeptideController
 from macpepdb_web_backend.controllers.api.api_digestion_controller import ApiDigestionController
@@ -23,13 +23,10 @@ class ApiPeptidesController(ApiAbstractPeptideController):
     PEPTIDE_LOOKUP_CHUNKS: ClassVar[int] = 500
 
     @staticmethod
-    @app.route("/api/peptides/search", endpoint="api_peptide_search_path", methods=["POST"])
-    @app.route("/api/peptides/search.<string:file_extension>", endpoint="api_peptide_search_csv_path", methods=["POST"])
     def search(file_extension: str = None):
         return ApiAbstractPeptideController._search(request, file_extension)
 
     @staticmethod
-    @app.route("/api/peptides/<string:sequence>", endpoint="api_peptide_path", methods=["GET"])
     def show(sequence: str):
         is_reviewed = request.args.get("is_reviewed", None)
         if is_reviewed is not None:
@@ -64,7 +61,6 @@ class ApiPeptidesController(ApiAbstractPeptideController):
                 )
 
     @staticmethod
-    @app.route("/api/peptides/<string:sequence>/proteins", endpoint="api_peptide_proteins_path", methods=["GET"])
     def proteins(sequence: str):
         peptide = Peptide(sequence.upper(), 0)
         database_connection = get_database_connection()
@@ -103,7 +99,6 @@ class ApiPeptidesController(ApiAbstractPeptideController):
             })
 
     @staticmethod
-    @app.route("/api/peptides/mass/<string:sequence>", endpoint="api_peptide_mass_path", methods=["GET"])
     def sequence_mass(sequence):
         peptide = Peptide(sequence, 0)
 
@@ -113,7 +108,6 @@ class ApiPeptidesController(ApiAbstractPeptideController):
 
 
     @staticmethod
-    @app.route("/api/peptides/digest", endpoint="api_peptide_digest_search", methods=["POST"])
     def digest():
         """
         Digest a given peptide/sequence, search the resulting peptides in the database and return matching and not matching peptides in separate array.
@@ -157,7 +151,6 @@ class ApiPeptidesController(ApiAbstractPeptideController):
 
 
     @staticmethod
-    @app.route("/api/peptides/lookup", methods=["POST"])
     def seqeunce_lookup():
         """
         Check if the incoming peptide sequences exists in MaCPepDB
