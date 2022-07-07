@@ -1,7 +1,7 @@
 # std imports
 from collections import defaultdict
 import itertools
-from typing import Iterator
+from typing import ClassVar, Iterator
 
 # 3rd party imports
 from flask import request, jsonify, Response
@@ -20,6 +20,7 @@ from macpepdb_web_backend.models.peptide import Peptide
 
 
 class ApiPeptidesController(ApiAbstractPeptideController):
+    PEPTIDE_LOOKUP_CHUNKS: ClassVar[int] = 500
 
     @staticmethod
     @app.route("/api/peptides/search", endpoint="api_peptide_search_path", methods=["POST"])
@@ -57,7 +58,10 @@ class ApiPeptidesController(ApiAbstractPeptideController):
             if is_reviewed is None \
                 or is_reviewed and peptide.metadata.is_swiss_prot \
                 or not is_reviewed and peptide.metadata.peptide.metadata.is_trembl:
-                return jsonify(peptide_to_dict(peptide))
+                return Response(
+                    peptide.to_json(),
+                    content_type="application/json"
+                )
 
     @staticmethod
     @app.route("/api/peptides/<string:sequence>/proteins", endpoint="api_peptide_proteins_path", methods=["GET"])
@@ -172,6 +176,10 @@ class ApiPeptidesController(ApiAbstractPeptideController):
             errors["sequences"].append("must be a list")
 
         peptides = [Peptide(sequence, 0) for sequence in data["sequences"]]
+        # Sort peptides by partition
+        partitions = defaultdict(list)
+        for peptide in peptides:
+            partitions[peptide.partition].append(peptide)
 
         if len(errors) > 0:
             return jsonify({
@@ -182,20 +190,30 @@ class ApiPeptidesController(ApiAbstractPeptideController):
             database_connection = macpepdb_pool.getconn()
             try:
                 with database_connection.cursor() as database_cursor:
-                    database_cursor.itersize = 5000
-                    for peptide_idx, peptide in enumerate(Peptide.select(
-                        database_cursor,
-                        WhereCondition(
-                            [
-                                "(partition, mass, sequence) IN (" + ",".join(["(%s, %s, %s)"] * len(peptides)) + ")"
-                            ],
-                            list(itertools.chain(*[(peptide.partition, peptide.mass, peptide.sequence) for peptide in peptides])),
-                        ),
-                        stream=True
-                    )):
-                        if peptide_idx > 0:
-                            yield "\n"
-                        yield peptide.sequence
+                    database_cursor.itersize = ApiPeptidesController.PEPTIDE_LOOKUP_CHUNKS
+                    # Request each partition in a separate query
+                    for partition, part_peptides in partitions.items():
+                        # Chunk the peptides in 500 
+                        chunk_start = 0
+                        while chunk_start < len(part_peptides):
+                            chunk = part_peptides[chunk_start:(chunk_start + ApiPeptidesController.PEPTIDE_LOOKUP_CHUNKS)]
+                            for peptide_idx, peptide in enumerate(Peptide.select(
+                                database_cursor,
+                                WhereCondition(
+                                    [
+                                        "partition = %s",
+                                        "AND"
+                                        "(mass, sequence) IN (" + ",".join(["(%s, %s)"] * len(chunk)) + ")"
+                                    ],
+                                    [partition] + list(itertools.chain(*[(peptide.mass, peptide.sequence) for peptide in chunk])),
+                                ),
+                                stream=True
+                            )):
+                                if peptide_idx > 0:
+                                    yield "\n"
+                                yield peptide.sequence
+                            chunk_start += ApiPeptidesController.PEPTIDE_LOOKUP_CHUNKS
+
             finally:
                 macpepdb_pool.putconn(database_connection)
 

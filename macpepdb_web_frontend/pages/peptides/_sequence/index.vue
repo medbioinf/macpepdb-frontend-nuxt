@@ -47,13 +47,27 @@
                                 {{ peptide.number_of_missed_cleavages }}
                             </td>
                         </tr>
+                    </tbody>
+                    <tbody v-if="peptide.metadata">
+                        <tr>
+                            <th>
+                                Proteomes IDs
+                            </th>
+                            <td>
+                                <RetractableList v-if="taxonomy_map" :number_of_elements="peptide.metadata.proteome_ids.length">
+                                    <li v-for="proteome_id in peptide.metadata.proteome_ids" :key="proteome_id">
+                                        <UniProtProteomeLink :proteome_id="proteome_id" />
+                                    </lI>
+                                </RetractableList>
+                            </td>
+                        </tr>
                         <tr>
                             <th>
                                 Taxonomies
                             </th>
                             <td>
-                                <RetractableList v-if="taxonomy_map" :number_of_elements="peptide.taxonomy_ids.length">
-                                    <li v-for="taxonomy_id in peptide.taxonomy_ids" :key="taxonomy_id">
+                                <RetractableList v-if="taxonomy_map" :number_of_elements="peptide.metadata.taxonomy_ids.length">
+                                    <li v-for="taxonomy_id in peptide.metadata.taxonomy_ids" :key="taxonomy_id">
                                         <UniProtTaxonomyLink :taxonomy_id="taxonomy_id" :taxonomy_name="taxonomy_map[taxonomy_id] || ''" />
                                     </li>
                                 </RetractableList>
@@ -64,22 +78,10 @@
                                 Unique in taxonomies
                             </th>
                             <td>
-                                <RetractableList v-if="taxonomy_map" :number_of_elements="peptide.unique_taxonomy_ids.length">
-                                    <li v-for="taxonomy_id in peptide.unique_taxonomy_ids" :key="taxonomy_id">
+                                <RetractableList v-if="taxonomy_map" :number_of_elements="peptide.metadata.unique_taxonomy_ids.length">
+                                    <li v-for="taxonomy_id in peptide.metadata.unique_taxonomy_ids" :key="taxonomy_id">
                                         <UniProtTaxonomyLink :taxonomy_id="taxonomy_id" :taxonomy_name="taxonomy_map[taxonomy_id] || ''" />
                                     </li>
-                                </RetractableList>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>
-                                Proteomes IDs
-                            </th>
-                            <td>
-                                <RetractableList v-if="taxonomy_map" :number_of_elements="peptide.proteome_ids.length">
-                                    <li v-for="proteome_id in peptide.proteome_ids" :key="proteome_id">
-                                        <UniProtProteomeLink :proteome_id="proteome_id" />
-                                    </lI>
                                 </RetractableList>
                             </td>
                         </tr>
@@ -88,12 +90,19 @@
                                 SwissProt/TrEMBL
                             </th>
                             <td>
-                                <i v-if="peptide.is_swiss_prot" class="fas fa-check"></i>
+                                <i v-if="peptide.metadata.is_swiss_prot" class="fas fa-check"></i>
                                 <i v-else class="fas fa-times"></i>
                                 /
-                                <i v-if="peptide.is_trembl" class="fas fa-check"></i>
+                                <i v-if="peptide.metadata.is_trembl" class="fas fa-check"></i>
                                 <i v-else class="fas fa-times"></i>
                             </td>
+                        </tr>
+                    </tbody>
+                    <tbody v-else>
+                        <tr>
+                            <th colspan="2">
+                                Metadata missing
+                            </th>
                         </tr>
                     </tbody>
                 </table>
@@ -172,25 +181,27 @@ export default {
             })
         },
         async get_taxonomies(){
-            return fetch(`${this.$config.macpepdb_backend_base_url}/api/taxonomies/by/ids`, {
-                "method": 'POST',
-                "no-cors": true,
-                "headers": {
-                    "Content-Type": "application/json"
-                },
-                "body": JSON.stringify({"ids": this.peptide.taxonomy_ids})
-            })
-            .then(response => {
-                return response.json()
-            })
-            .then(response_body => {
-                var taxonomy_map = {}
-                response_body.taxonomies.forEach(taxonomy => {
-                    taxonomy_map[taxonomy.id] = taxonomy.name
+            if(this.peptide.metadata != null){
+                return fetch(`${this.$config.macpepdb_backend_base_url}/api/taxonomies/by/ids`, {
+                    "method": 'POST',
+                    "no-cors": true,
+                    "headers": {
+                        "Content-Type": "application/json"
+                    },
+                    "body": JSON.stringify({"ids": this.peptide.metadata.taxonomy_ids})
                 })
-                this.taxonomy_map = taxonomy_map
-                return Promise.resolve()
-            })
+                .then(response => {
+                    return response.json()
+                })
+                .then(response_body => {
+                    var taxonomy_map = {}
+                    response_body.taxonomies.forEach(taxonomy => {
+                        taxonomy_map[taxonomy.id] = taxonomy.name
+                    })
+                    this.taxonomy_map = taxonomy_map
+                    return Promise.resolve()
+                })
+            }
         },
         toggle_unreviewed_proteins_visibility(){
             this.show_unreviewed_proteins = !this.show_unreviewed_proteins
