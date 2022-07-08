@@ -99,7 +99,7 @@
                     <tbody>
                         <tr v-for="peptide in results.peptides" :key="peptide.sequence">
                             <th>
-                                <NuxtLink :to="{name: 'peptides-sequence', params: {sequence: peptide.sequence}}">{{peptide.sequence}}</NuxtLink>
+                                <NuxtLink :to="{name: 'peptides-sequence', params: {sequence: peptide.sequence}}">{{ peptide.sequence }}</NuxtLink>
                             </th>
                             <td>
                                 {{ peptide.mass }}
@@ -237,13 +237,13 @@ export default {
                 body: JSON.stringify(request_body)
             }).then(response => {
                 if(response.ok) {
-                    response.json().then(response_data => {
+                    return response.json().then(response_data => {
                         if(!is_same_search) this.results.total_count = response_data.count
                         this.results.peptides = response_data.peptides
                         this.$el.querySelector('.peptides').scrollIntoView(true)
                     })
                 } else if(response.status == 422) {
-                    response.json().then(response_data => {
+                    return response.json().then(response_data => {
                         this.errors = response_data.errors
                         this.errors.lower_tolerance = this.errors.lower_precursor_tolerance_ppm
                         this.errors.upper_tolerance = this.errors.upper_precursor_tolerance_ppm
@@ -282,10 +282,11 @@ export default {
                 limit: this.peptides_per_page,
                 offset: this.peptides_per_page * (this.current_result_page - 1),    // page is satrts at 1
                 order_by: this.search_params.order.by,
-                order_direction: this.search_params.order.direction
+                order_direction: this.search_params.order.direction,
             }
             if(this.search_params.taxonomy_id) data['taxonomy_id'] = this.search_params.taxonomy_id
             if(this.search_params.is_reviewed != null) data['is_reviewed'] = this.search_params.is_reviewed
+            if(("taxonomy_id" in data) || ("is_reviewed" in data)) data["include_metadata"] = true
             return data
         },
         download_search_params(){

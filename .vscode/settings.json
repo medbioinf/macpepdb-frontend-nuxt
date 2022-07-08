@@ -1,0 +1,5 @@
+{
+    "python.pythonPath": "/home/winkelhardtdi/.local/share/virtualenvs/macpepdb-web-aFETBWVP/bin/python",
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": false
+}
