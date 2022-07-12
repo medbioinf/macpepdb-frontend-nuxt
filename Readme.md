@@ -34,6 +34,7 @@ The frontend is configured by 3 environment variables:
 | MACPEPDB_BACKEND_BASE_URL | `http://localhost:3000` | Base URL for the backend (no trailing slash, must be accessible for the internet browser) |
 | MACPEPDB_FRONTEND_INTERFACE | `127.0.0.1` | IP for the frontend |
 | MACPEPDB_FRONTEND_PORT | `5000` | Port of the frontend |
+| MACPEPDB_FRONTEND_BASE_URL | `http://localhost:5000` | Base URL part for building full URLs |
 
 ## Production
 You have two options to run the app:

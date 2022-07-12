@@ -86,7 +86,26 @@
 </template>
 
 <script>
+import logo_wide_png from "~/assets/images/logo-wide.png"
+
 export default {
+    head(){
+        return {
+            meta: [
+                { hid: 'description', name: 'description', content: this.$config.DESCRIPTION },
+                { hid: 'og-type', property: 'og:type', content: 'website' },
+                { hid: 'og-url', property: 'og:url', content: this.$full_url },
+                { hid: 'og-title', property: 'og:title', content: this.$config.title },
+                { hid: 'og-site_name', name: 'og:site_name ', content: this.$config.short_title },
+                { hid: 'og-desc', name: 'og:desc', content: this.$config.description },
+                { hid: 'og-image', property: 'og:image', content: logo_wide_png },
+                { hid: 'og-image-type', property: 'og:image:type', content: 'image/png' },
+                { hid: 'og-image-width', property: 'og:image:width', content: 698 },
+                { hid: 'og-image-height', property: 'og:image:height', content: 400 },
+                { hid: 'twitter-card', name: 'twitter:card', content: 'summary' }
+            ]
+        }
+    },
     data(){
         return {
             show_menu: false

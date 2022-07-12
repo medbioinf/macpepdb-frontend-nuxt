@@ -135,6 +135,15 @@
 <script>
 
 export default {
+    head(){
+        return {
+            meta: [
+                { hid: 'description', name: 'description', content: 'Digest sequences and search results in MaCPepDB' },
+                { hid: 'og-desc', name: 'og:desc', content: 'Digest sequences and search results in MaCPepDB' },
+                { hid: 'og-title', property: 'og:title', content: `${this.$config.short_title} - Digestion` },
+            ]
+        }
+    },
     data(){
         return {
             // Inputs

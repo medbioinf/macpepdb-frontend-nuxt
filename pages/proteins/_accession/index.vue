@@ -97,6 +97,15 @@
 
 <script>
 export default {
+    head(){
+        return {
+            meta: [
+                { hid: 'description', name: 'description', content: this.og_description },
+                { hid: 'og-desc', name: 'og:desc', content: this.og_description},
+                { hid: 'og-title', property: 'og:title', content: this.og_title },
+            ]
+        }
+    },
     data(){
         return {
             protein: null,
@@ -131,6 +140,18 @@ export default {
     computed: {
         uniprot_url(){
             return `https://www.uniprot.org/uniprot/${this.protein.accession}`
+        },
+        og_description(){
+            if(this.protein != null)
+                return `Have a look at protein '${this.protein.accession}'`
+            else
+                return this.$config.description
+        },
+        og_title(){
+            let title = this.$config.short_title
+            if(this.protein != null)
+                title = `${title} - Protein '${this.protein.accession}'`
+            return title
         }
     }
 }

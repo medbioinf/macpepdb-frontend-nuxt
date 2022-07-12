@@ -37,6 +37,15 @@
 import Vue from 'vue';
 
 export default {
+    head(){
+        return {
+            meta: [
+                { hid: 'description', name: 'description', content: "Search peptides by sequence, mass or protein." },
+                { hid: 'og-desc', name: 'og:desc', content: "Search peptides by sequence, mass or protein."},
+                { hid: 'og-title', property: 'og:title', content: `${this.$config.short_title} - Peptide search` },
+            ]
+        }
+    },
     data(){
         return {
             show_search_for_sequence: true,

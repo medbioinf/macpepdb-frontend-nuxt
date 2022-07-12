@@ -130,6 +130,15 @@
 
 <script>
 export default {
+    head(){
+        return {
+            meta: [
+                { hid: 'description', name: 'description', content: this.og_description },
+                { hid: 'og-desc', name: 'og:desc', content: this.og_description},
+                { hid: 'og-title', property: 'og:title', content: this.og_title },
+            ]
+        }
+    },
     data(){
         return {
             peptide: null,
@@ -210,6 +219,18 @@ export default {
     computed: {
         are_proteins_loaded(){
             return this.reviewed_proteins != null && this.unreviewed_proteins != null
+        },
+        og_description(){
+            if(this.peptide != null)
+                return `Have a look at peptide '${this.peptide.sequence}'`
+            else
+                return this.$config.description
+        },
+        og_title(){
+            let title = this.$config.short_title
+            if(this.peptide != null)
+                title = `${title} - Peptide '${this.peptide.sequence}'`
+            return title
         }
     }
 }

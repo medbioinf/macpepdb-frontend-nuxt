@@ -18,6 +18,15 @@
 
 <script>
 export default {
+    head(){
+        return {
+            meta: [
+                { hid: 'description', name: 'description', content: "Search proteins by accession" },
+                { hid: 'og-desc', name: 'og:desc', content: "Search proteins by accession"},
+                { hid: 'og-title', property: 'og:title', content: `${this.$config.short_title} - Protein search` },
+            ]
+        }
+    },
     data(){
         return {
             accession: ""
