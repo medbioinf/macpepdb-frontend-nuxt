@@ -18,6 +18,29 @@
       </div>
     </div>
     <div class="row mb-3">
+      <div class="col">
+        <div class="card mb-3">
+          <div class="card-header">
+            Citation and publication
+          </div>
+          <div class="card-body">
+            <ul>
+              <li>
+                  <div class="d-flex flex-column">
+                    <span class="fw-bold">MaCPepDB: A Database to Quickly Access All Tryptic Peptides of the UniProtKB</span>
+                    <span>Julian Uszkoreit, Dirk Winkelhardt, Katalin Barkovits, Maximilian Wulf, Sascha Roocke, Katrin Marcus, and Martin Eisenacher</span>
+                    <span>Journal of Proteome Research 2021 20 (4), 2145-2150</span>
+                    <a href="https://doi.org/10.1021/acs.jproteome.0c00967" target="_blank" class="font-weight-bold"> 
+                      DOI: 10.1021/acs.jproteome.0c00967
+                    </a>
+                  </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row mb-3">
       <div class="col col-md-6">
         <div class="card mb-3">
           <div class="card-header">

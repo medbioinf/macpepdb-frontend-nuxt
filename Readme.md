@@ -54,3 +54,9 @@ You have two options to run the app:
 
 ### Make it available over a single domain and scale it up
 For production and combination of backend and frontend into a single domain just merge the nginx.example.conf with the one of MaCPepDB web API.
+
+## Citation and Publication
+* **MaCPepDB: A Database to Quickly Access All Tryptic Peptides of the UniProtKB**   
+    Julian Uszkoreit, Dirk Winkelhardt, Katalin Barkovits, Maximilian Wulf, Sascha Roocke, Katrin Marcus, and Martin Eisenacher   
+    Journal of Proteome Research 2021 20 (4), 2145-2150   
+    [DOI: 10.1021/acs.jproteome.0c00967](https://doi.org/10.1021/acs.jproteome.0c00967)
