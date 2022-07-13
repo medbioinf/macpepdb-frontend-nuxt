@@ -176,14 +176,14 @@ export default {
          * @function fetchDigestionParameters
          */
         fetchDigestionParameters(){
-            fetch(`${this.$config.macpepdb_backend_base_url}/api/dashboard`)
+            fetch(`${this.$config.macpepdb_backend_base_url}/api/dashboard/maintenance`)
             .then(response => {
                 if(response.ok){
                     response.json()
                     .then(response_data => {
-                        this.digest_params.max_missed_cleavages = response_data.digestion_paramters.maximum_number_of_missed_cleavages
-                        this.digest_params.min_length = response_data.digestion_paramters.minimum_peptide_length
-                        this.digest_params.max_length = response_data.digestion_paramters.maximum_peptide_length
+                        this.digest_params.max_missed_cleavages = response_data.digestion_parameters.maximum_number_of_missed_cleavages
+                        this.digest_params.min_length = response_data.digestion_parameters.minimum_peptide_length
+                        this.digest_params.max_length = response_data.digestion_parameters.maximum_peptide_length
                     })
                 } else {
                     this.handleUnknownResponse(response)
