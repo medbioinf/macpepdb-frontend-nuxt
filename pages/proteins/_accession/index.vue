@@ -35,7 +35,7 @@
                             Taxonomy
                         </th>
                         <td>
-                            <UniProtTaxonomyLink :taxonomy_id="protein.taxonomy_id" :taxonomy_name="protein.taxonomy_name" />
+                            <UniProtTaxonomyLink :taxonomy_id="protein.taxonomy_id" :taxonomy_name="taxonomy_name" />
                         </td>
                     </tr>
                     <tr>
@@ -110,25 +110,13 @@ export default {
         return {
             protein: null,
             peptides: null,
+            taxonomy_name: null,
             is_searching: true
         }
     },
     created(){
-        fetch(`${this.$config.macpepdb_backend_base_url}/api/proteins/${this.$route.params.accession}`)
-        .then(response => {
-            if(response.ok){
-                response.json()
-                .then(response_body => {
-                    this.protein = response_body
-                })
-            } else if(response.status == 404) {
-                // Protein not found, do nothing
-            } else {
-                this.handleUnknownResponse(response)
-            }
-        })
-        .finally(() => {
-            this.is_searching = false
+        this.get_protein().then(() => {
+            this.get_taxonomy_name()
         })
     },
     mounted(){
@@ -136,6 +124,37 @@ export default {
             this.current_page = page
             this.loadPeptides()
         })
+    },
+    methods: {
+        async get_protein(){
+            return fetch(`${this.$config.macpepdb_backend_base_url}/api/proteins/${this.$route.params.accession}`)
+            .then(response => {
+                if(response.ok){
+                    return response.json()
+                    .then(response_body => {
+                        this.protein = response_body
+                    })
+                } else if(response.status == 404) {
+                    // Protein not found, do nothing
+                } else {
+                    this.handleUnknownResponse(response)
+                }
+            })
+            .finally(() => {
+                this.is_searching = false
+            })
+        },
+        async get_taxonomy_name(){
+            if(this.protein != null){
+                return fetch(`${this.$config.macpepdb_backend_base_url}/api/taxonomies/${this.protein.taxonomy_id}`)
+                .then(response => {
+                    return response.json()
+                })
+                .then(response_body => {
+                    this.taxonomy_name = response_body.name
+                })
+            }
+        }
     },
     computed: {
         uniprot_url(){
