@@ -46,6 +46,12 @@
                         </p>
                         <ul class="nav flex-column">
                             <li class="nav-item">
+                                <NuxtLink to="/publications_and_posters" class="nav-link">
+                                    <i class="fas fa-book"></i>
+                                    <span>Publications & Posters</span>
+                                </NuxtLink>
+                            </li>
+                            <li class="nav-item">
                                 <NuxtLink to="/docs" class="nav-link">
                                     <i class="fas fa-file-code"></i>
                                     <span>Documentation</span>
