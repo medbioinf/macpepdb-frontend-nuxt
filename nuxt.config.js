@@ -31,7 +31,8 @@ export default {
   plugins: [
     "~/plugins/event_bus.js",
     "~/plugins/api_error_handling.js",
-    "~/plugins/full_url.js"
+    "~/plugins/full_url.js",
+    "~/plugins/timestamp_to_iso.js"
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components

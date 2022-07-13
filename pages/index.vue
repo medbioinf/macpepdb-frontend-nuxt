@@ -1,12 +1,6 @@
 <template>
   <div class="dashboard">
     <h1>Welcome to MaCPepDB - Mass Centric Peptide Database</h1>
-    <div v-if="dashboard_data.database_comment" class="card mb-3">
-      <div class="card-body d-flex">
-        <i class="pt-1 px-2 fas fa-info-circle"></i>
-        <p class="white-space-pre-line">{{ dashboard_data.database_comment }}</p>
-      </div>
-    </div>
     <div class="card mb-3">
       <div class="card-body">
         <p>From here you have two options to search the database:</p>
@@ -40,7 +34,7 @@
         </div>
       </div>
     </div>
-    <div class="row mb-3">
+    <div v-if="is_dashboard_loaded" class="row mb-3">
       <div class="col col-md-6">
         <div class="card mb-3">
           <div class="card-header">
@@ -57,16 +51,27 @@
               <tbody>
                 <tr>
                   <th>Maintenance mode</th>
-                  <td>{{ dashboard_data.database_status['maintenance_mode'] }}</td>
+                  <td>{{ database_status.maintenance_mode }}</td>
                 </tr>
                 <tr>
                   <th>Last finished update</th>
-                  <td>{{ dashboard_data.database_status['last_update'] }}</td>
+                  <td>{{ database_status.last_update | timestampToIsoDate }}</td>
+                </tr>
+                <tr>
+                  <th>comment</th>
+                  <td v-if="comment">{{ comment }}</td>
+                  <td v-else> n/a </td>
+                </tr>
+                <tr>
+                  <th>Number of databse nodes online</th>
+                  <td>{{ database_status.number_of_nodes }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
+      </div>
+      <div class="col col-md-6">
         <div class="card">
           <div class="card-header">
             Digestion paramters
@@ -82,66 +87,15 @@
               <tbody>
                 <tr>
                   <th>Enzyme</th>
-                  <td>{{ dashboard_data.digestion_parameters.enzyme_name }}</td>
+                  <td>{{ digestion_parameters.enzyme_name }}</td>
                 </tr>
                 <tr>
                   <th>Allowed missed cleavages</th>
-                  <td>{{ dashboard_data.digestion_parameters.maximum_number_of_missed_cleavages }}</td>
+                  <td>{{ digestion_parameters.maximum_number_of_missed_cleavages }}</td>
                 </tr>
                 <tr>
                   <th>Peptide length</th>
-                  <td>{{ dashboard_data.digestion_parameters.minimum_peptide_length }} - {{ dashboard_data.digestion_parameters.maximum_peptide_length }} </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <div class="col col-md-6">
-        <div class="card">
-          <div class="card-header">
-            Peptides
-          </div>
-          <div class="card-body">
-            <p><b>Total:</b> {{dashboard_data.peptide_count}}</p>
-            <p><b>Peptides per partition</b></p>
-            <figure class="matplotlib bar-chart" v-html="dashboard_data.peptide_partitions_svg"></figure>
-
-            <button class="btn btn-outline-link btn-sm pl-0" type="button" data-toggle="collapse" data-target="#peptide-estimation-description" aria-expanded="false" aria-controls="peptide-estimation-description">
-              These are only estimates that fluctuate a little from time to time. Read why ....
-              <i class="fas"></i>
-            </button>
-
-            <div class="collapse" id="peptide-estimation-description">
-              <p>
-                Counting the peptides with <code>SELECT count(*) ...</code> needs serveral minutes for each partition and locks the table for other operations.
-                With PostgreSQLs <code>pg_class</code>-view it is possible to create a good estimation, based on the actual diskspace. This view will change from time to time, due to internal maintenance work by PostgreSQL itself.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col col-md-12">
-        <div class="card">
-          <div class="card-header">
-            Peptide partition information
-          </div>
-          <div class="card-body">
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Partition</th>
-                  <th>Lower boundary (Dalton)</th>
-                  <th>Upper boundary (Dalton)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="partition_boundary in dashboard_data.partition_boundaries" :key="partition_boundary[0]">
-                  <td>{{ partition_boundary[0] }}</td>
-                  <td>{{ partition_boundary[1] }}</td>
-                  <td>{{ partition_boundary[2] }}</td>
+                  <td>{{ digestion_parameters.minimum_peptide_length }} - {{ digestion_parameters.maximum_peptide_length }} </td>
                 </tr>
               </tbody>
             </table>
@@ -156,25 +110,67 @@
 export default {
   mounted(){
     if(!this.is_dashboard_loaded){
-      fetch(`${this.$config.macpepdb_backend_base_url}/api/dashboard/maintenance`, {"no-cors": true})
+      Promise.all([
+        this.fetch_maintenance(),
+        this.fetch_status()
+      ]).finally(() => {
+        this.is_dashboard_loaded = true
+      })
+    }
+    
+  },
+  methods: {
+    async fetch_maintenance(){
+      return fetch(`${this.$config.macpepdb_backend_base_url}/api/dashboard/maintenance`, {"no-cors": true})
       .then(response => {
-        response.json()
+        return response.json()
         .then(response_body => {
-          this.dashboard_data = response_body
+          this.digestion_parameters = response_body.digestion_parameters
+          this.comment = response_body.comment
+        })
+      })
+    },
+    async fetch_status(){
+      return fetch(`${this.$config.macpepdb_backend_base_url}/api/dashboard/status`, {"no-cors": true})
+      .then(response => {
+        return response.json()
+        .then(response_body => {
+          this.database_status = response_body
         })
       })
     }
   },
   computed: {
-    is_dashboard_loaded(){
-      return this.$store.state.dashboard.is_loaded
-    },
-    dashboard_data: {
+    is_dashboard_loaded: {
       set(data){
-        this.$store.commit("dashboard/set", data)
+        this.$store.commit("dashboard/setIsLoaded")
       },
       get(){
-        return this.$store.state.dashboard.data
+        return this.$store.state.dashboard.is_loaded
+      }
+    },
+    database_status: {
+      set(data){
+        this.$store.commit("dashboard/setDatabaseStatus", data)
+      },
+      get(){
+        return this.$store.state.dashboard.database_status
+      }
+    },
+    digestion_parameters: {
+      set(data){
+        this.$store.commit("dashboard/setDigestionParameters", data)
+      },
+      get(){
+        return this.$store.state.dashboard.digestion_parameters
+      }
+    },
+    comment: {
+      set(data){
+        this.$store.commit("dashboard/setComment", data)
+      },
+      get(){
+        return this.$store.state.dashboard.comment
       }
     }
   }

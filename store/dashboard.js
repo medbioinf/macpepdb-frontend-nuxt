@@ -1,24 +1,34 @@
 export const state = () => ({
     is_loaded: false,
-    data: {
-        "database_status": {
-            "last_update": "1970-01-01 00:00",
-            "maintenance_mode": "Off"
-        },
-        "digestion_parameters": {
-            "enzyme_name": "",
-            "maximum_number_of_missed_cleavages": 0,
-            "maximum_peptide_length": 0,
-            "minimum_peptide_length": 0
-        },
-        comment: null
+    database_status: {
+        "last_update": 0,
+        "maintenance_mode": false,
+        "number_of_finished_rebalance_jobs": 0,
+        "number_of_nodes": 0,
+        "number_of_rebalance_jobs": 0,
+        "number_of_running_rebalance_jobs": 0
     },
-    is_loaded: false
+    digestion_parameters: {
+        "enzyme_name": "",
+        "maximum_number_of_missed_cleavages": 0,
+        "maximum_peptide_length": 0,
+        "minimum_peptide_length": 0
+    },
+    comment: null
 })
   
 export const mutations = {
-    set(state, data) {
-        state.data = data
+    setDatabaseStatus(state, data) {
+        state.database_status = data
+
+    },
+    setDigestionParameters(state, data) {
+        state.digestion_parameters = data
+    },
+    setComment(state, comment) {
+        state.comment = comment
+    },
+    setIsLoaded(state) {
         state.is_loaded = true
     }
 }
