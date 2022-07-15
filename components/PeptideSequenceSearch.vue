@@ -55,6 +55,11 @@
                 </tr>
             </tbody>
         </table>
+        <div v-if="not_found">
+            <p>
+                Peptide not found.
+            </p>
+        </div>
     </div>
 </template>
 
@@ -71,13 +76,14 @@ export default {
             },
             is_searching: false,
             peptide: null,
-            errors: {}
+            not_found: false
         }
     },
     methods: {
         search(){
             if(!this.is_searching){
                 this.is_searching = true
+                this.not_found = false
                 var search_url = `${this.$config.macpepdb_backend_base_url}/api/peptides/${this.sequence}`
                 if(this.search_params.is_reviewed != null){
                     search_url += `?is_reviewed=${this.search_params.is_reviewed}`
@@ -91,9 +97,8 @@ export default {
                             this.peptide = response_data
                         })
                     } else if(response.status == 404) {
-                        response.json().then(response_data => {
-                            this.errors = response_data.errors
-                        })
+                        this.not_found = true
+                        this.peptide = null
                     } else {
                         this.handleUnknownResponse(response)
                     }
