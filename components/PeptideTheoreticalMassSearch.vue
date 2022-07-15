@@ -54,15 +54,15 @@
                     <div class="col-sm-2 col-form-label">Uniprot Database</div>
                     <div class="col-sm-10 d-flex align-items-center">
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="inlineRadioOptions" id="swiss-prot-and-trembl" :value="null" v-model="search_params.is_reviewed">
+                            <input class="form-check-input" type="radio" name="mass-search-review-filter" id="swiss-prot-and-trembl" :value="null" v-model="search_params.is_reviewed">
                             <label class="form-check-label" for="swiss-prot-and-trembl">Both</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="inlineRadioOptions" id="swiss-prot-only" :value="true" v-model="search_params.is_reviewed">
+                            <input class="form-check-input" type="radio" name="mass-search-review-filter" id="swiss-prot-only" :value="true" v-model="search_params.is_reviewed">
                             <label class="form-check-label" for="swiss-prot-only">Swiss-Prot</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="inlineRadioOptions" id="trembl-only" :value="false" v-model="search_params.is_reviewed">
+                            <input class="form-check-input" type="radio" name="mass-search-review-filter" id="trembl-only" :value="false" v-model="search_params.is_reviewed">
                             <label class="form-check-label" for="trembl-only">TrEMBL</label>
                         </div>
                     </div>

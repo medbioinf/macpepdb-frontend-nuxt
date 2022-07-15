@@ -19,15 +19,15 @@
                 <div class="col-sm-2 col-form-label">Uniprot Database</div>
                 <div class="col-sm-10 d-flex align-items-center">
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="inlineRadioOptions" id="swiss-prot-and-trembl" :value="null" v-model="search_params.is_reviewed">
+                        <input class="form-check-input" type="radio" name="sequence-search-review-filter" id="swiss-prot-and-trembl" :value="null" v-model="search_params.is_reviewed">
                         <label class="form-check-label" for="swiss-prot-and-trembl">Both</label>
                     </div>
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="inlineRadioOptions" id="swiss-prot-only" :value="true" v-model="search_params.is_reviewed">
+                        <input class="form-check-input" type="radio" name="sequence-search-review-filter" id="swiss-prot-only" :value="1" v-model="search_params.is_reviewed">
                         <label class="form-check-label" for="swiss-prot-only">Swiss-Prot</label>
                     </div>
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="inlineRadioOptions" id="trembl-only" :value="false" v-model="search_params.is_reviewed">
+                        <input class="form-check-input" type="radio" name="sequence-search-review-filter" id="trembl-only" :value="0" v-model="search_params.is_reviewed">
                         <label class="form-check-label" for="trembl-only">TrEMBL</label>
                     </div>
                 </div>
@@ -79,10 +79,8 @@ export default {
             if(!this.is_searching){
                 this.is_searching = true
                 var search_url = `${this.$config.macpepdb_backend_base_url}/api/peptides/${this.sequence}`
-                if(this.search_params.is_reviewed != null)
-                {
-                    search_url += "?is_reviewed="
-                    search_url += this.search_params.is_reviewed ? "1" : "0"
+                if(this.search_params.is_reviewed != null){
+                    search_url += `?is_reviewed=${this.search_params.is_reviewed}`
                 }
                 fetch(search_url, {
                     method: 'GET',
