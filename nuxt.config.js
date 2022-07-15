@@ -60,7 +60,7 @@ export default {
   },
 
   server: {
-    host: process.env.MACPEPDB_FRONTEND_INTERFACE || "127.0.0.1",
+    host: process.env.MACPEPDB_FRONTEND_INTERFACE || "127.0.0.1",
     port: process.env.MACPEPDB_FRONTEND_PORT || 5000,
     timing: false
   }
