@@ -23,8 +23,10 @@ description: Learn how to the MaCPepDB API
 
 ### Get peptides of protein
 #### url
-`http://localhost/api/proteins/<string:accession>/peptides`   
-#### ouput
+`http://localhost/api/proteins/<string:accession>/peptides`
+#### additional headers
+* Accept: `application/json` or `text/csv` (This controls the output, see below. `application/json` is the default and is used for unknown accept-formats)
+#### output (application/json)
 ```json
 {
     "peptides": [
@@ -41,6 +43,12 @@ description: Learn how to the MaCPepDB API
         ...
     ]
 }
+```
+#### output (text/csv)
+```text
+mass,sequence,number_of_missed_cleavages,in_swiss_prot,in_trembl,taxonomy_ids,unique_for_taxonomy_ids,proteome_ids
+588.286739698,"DAQAGK",0,"true","true","9749,9534,...","UP000186942,UP000243499,UP000037951,..."
+...
 ```
 
 ### Digest protein

@@ -1,10 +1,16 @@
 <template>
     <div>
         <div v-if="!is_loading_peptides">
-            <button @click="toggleFilterVisibility()" class="btn btn-primary btn-sm" type="button">
-                filter
-                <i :class="{'fa-caret-down': !show_filter_inputs, 'fa-caret-up': show_filter_inputs}" class="fas"></i>
-            </button>
+            <div class="d-flex justify-content-between"> 
+                <button @click="toggleFilterVisibility()" class="btn btn-primary btn-sm" type="button">
+                    filter
+                    <i :class="{'fa-caret-down': !show_filter_inputs, 'fa-caret-up': show_filter_inputs}" class="fas"></i>
+                </button>
+                <a :href="`${this.$config.macpepdb_backend_base_url}/api/proteins/${this.$route.params.accession}/peptides.csv`" class="btn btn-primary btn-sm">
+                    Download all peptides as CSV
+                    <i class="fas fa-download"></i>
+                </a>
+            </div>
             <div :class="{show: show_filter_inputs}" class="collapse">
                 <div class="row mb-3">
                     <label for="maximum-number-of-missed-cleavages" class="col-sm-2 col-form-label">Maximum number of missed cleavages</label>
@@ -126,7 +132,11 @@ export default {
     methods: {
         async loadPeptides(){
             this.is_loading_peptides = true
-            fetch(`${this.$config.macpepdb_backend_base_url}/api/proteins/${this.protein_accession}/peptides`)
+            fetch(`${this.$config.macpepdb_backend_base_url}/api/proteins/${this.protein_accession}/peptides`, {
+                headers: {
+                    "Accept": "application/json"
+                }
+            })
             .then(response => {
                 if(response.ok){
                     response.json()
